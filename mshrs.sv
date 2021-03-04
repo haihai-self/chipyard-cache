@@ -1,8 +1,10 @@
 `include "structure/lsust.sv";    
+`include "cacheparam.sv"
+`include "consts.sv";
+import naHasL1CacheParametersme::*;
+import MemoryOpConstants::*;
 import boom_lsu_st::*;
 
-localparam cacheDataBeats=4;
-localparam log2CeilcacheDataBeats=2;
 
 module BoomMSHR(
     input   logic                  clock               ,
@@ -68,7 +70,7 @@ BoomDCacheReqInternalST req;
 
 
 
-logic [log2CeilcacheDataBeats-1:0] refill_ctr;
+logic [$clog2(cacheDataBeats)-1:0] refill_ctr;
 logic commit_line;
 logic grant_had_data;
 logic finish_to_prefetch;
@@ -86,7 +88,7 @@ logic [$clog2(cfg.nRPQ)-1: 0] rpq_o_count;
 
 assign rpq_i_enq_valid = (i_req_pri_val && o_req_pri_rdy) || 
                          (i_req_sec_val && o_req_sec_rdy) &&
-                         !isPrefetch(i_req);
+                         !isPrefetch(i_req.uop.mem_cmd);
 
 BranchKillableQueue rpq #(.entries(cfg.nRPQ)            ,
                           .T(BoomDCacheReqInternal)) 
@@ -106,14 +108,15 @@ BranchKillableQueue rpq #(.entries(cfg.nRPQ)            ,
 
 function automatic MSHRSStates handle_pri_req(MSHRSStates old_state);
     MSHRSStates new_state;
-    always_comb begin
-        new_state = old_state;
-        grantack.valid = 0;
-        assert (io_) 
-        else   error_process
+    new_state = old_state;
+    grantack.valid = 0;
+    assert(rpq_o_enq_ready); 
+    req = i_req;
+    logic [client_states_width-1: 0] old_coh;
+    old_coh = i_req.old_meta_coh_state;
+    
 
         
-    end
 endfunction
 
 always_ff @(posedge clock) begin
