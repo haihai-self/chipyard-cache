@@ -1,6 +1,5 @@
-`include "./structure/lsust.sv";
-`include "./parameters.sv"
-import boom_lsu_st::*;
+
+import BoomLSUST::*;
 
 function automatic logic isPow2(int n);
     if (n < 1) return 0;

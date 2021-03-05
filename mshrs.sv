@@ -1,9 +1,7 @@
-`include "structure/lsust.sv";    
-`include "cacheparam.sv"
-`include "consts.sv";
-import naHasL1CacheParametersme::*;
+
+import HasL1CacheParameters::*;
 import MemoryOpConstants::*;
-import boom_lsu_st::*;
+import TLBundleParam::*;
 
 
 module BoomMSHR(
@@ -67,13 +65,37 @@ MSHRSStates states;
 ValidTLBundleEST grantack;
 
 BoomDCacheReqInternalST req;
+logic [`blockOffBits-1: 0] req_idx;
+logic [tagBits-1: 0] req_tag;
+logic [`paddrBits-1: 0] req_block_addr;
+logic req_needs_wb; 
 
 
+assign req_idx = req.addr[untagBits-1: `blockOffBits];
+assign req_tag = req.addr >> untagBits;
+assign req_block_addr = ((req.addr >> `blockOffBits) << `blockOffBits);
+
+logic [TLPermissions_width-1:0] new_coh;
+
+logic [cwidth-1:0] shrink_param;
+logic [TLPermissions_width-1:0] coh_on_clear;
+
+
+assign {shrink_param, coh_on_clear} = onCacheControl(req.old_meta_coh_state, M_FLUSH);  //need one bit flag
+
+logic [2:0] grow_param;
+logic [TLPermissions_width-1: 0] coh_on_grant;
+
+assign grow_param = onAccess(new_coh, req.uop.mem_cmd);
+assign coh_on_grant = onGrant(req.uop.mem_cmd, io_mem_grant);
 
 logic [$clog2(cacheDataBeats)-1:0] refill_ctr;
 logic commit_line;
 logic grant_had_data;
 logic finish_to_prefetch;
+logic is_hit;
+logic coh_on_hit;
+
 
 
 logic rpq_i_enq_valid;
@@ -90,30 +112,57 @@ assign rpq_i_enq_valid = (i_req_pri_val && o_req_pri_rdy) ||
                          (i_req_sec_val && o_req_sec_rdy) &&
                          !isPrefetch(i_req.uop.mem_cmd);
 
-BranchKillableQueue rpq #(.entries(cfg.nRPQ)            ,
-                          .T(BoomDCacheReqInternal)) 
-                         (.clock(clock)                 ,
-                          .reset(reset)                 ,
-                          .o_enq_ready(rpq_o_enq_ready) ,
-                          .i_enq_valid(rpq_i_enq_valid) ,
-                          .i_enq(i_req)                 ,
-                          .i_deq_ready(0)               ,   
-                          .o_deq_valid(o_deq_valid)     ,
-                          .o_deq(rpq_o_deq)             ,
-                          .i_brupdate(i_brupdate)       ,
-                          .i_flush(i_exception)         ,
-                          .o_empty(rpq_o_empty)         ,
-                          .o_count(rpq_o_count)
-                          )
+BranchKillableQueue # (.entries(cfg.nRPQ)            ,
+                      .T(BoomDCacheReqInternalST)) 
+                    rpq
+                    (.clock(clock)                ,
+                    .reset(reset)                 ,
+                    .o_enq_ready(rpq_o_enq_ready) ,
+                    .i_enq_valid(rpq_i_enq_valid) ,
+                    .i_enq(i_req)                 ,
+                    .i_deq_ready(0)               ,   
+                    .o_deq_valid(o_deq_valid)     ,
+                    .o_deq(rpq_o_deq)             ,
+                    .i_brupdate(i_brupdate)       ,
+                    .i_flush(i_exception)         ,
+                    .o_empty(rpq_o_empty)         ,
+                    .o_count(rpq_o_count)
+                    );
 
 function automatic MSHRSStates handle_pri_req(MSHRSStates old_state);
+    logic [client_states_width-1: 0] old_coh;
+    logic [5:0] on_cache_result;
+    logic [5:0] on_access;
+
     MSHRSStates new_state;
     new_state = old_state;
     grantack.valid = 0;
     assert(rpq_o_enq_ready); 
     req = i_req;
-    logic [client_states_width-1: 0] old_coh;
     old_coh = i_req.old_meta_coh_state;
+    on_cache_result = onCacheControl(old_coh, M_FLUSH);
+    req_needs_wb = on_cache_result[5];
+    if (i_req.tag_match)begin
+        on_access = onAccess(old_coh, i_req.uop.mem_cmd);
+        is_hit = on_access[5];
+        coh_on_hit = on_access[1:0];
+        if (is_hit) begin
+            assert(isWrite(i_req.uop.mem_cmd));
+            new_coh = coh_on_hit;
+            new_state = s_drain_rpq;
+        end
+        else begin
+            new_coh = old_coh;
+            new_state = s_refill_req;
+        end
+    end
+    else begin
+        new_coh = Nothing;
+        new_state = s_refill_req;
+    end
+
+
+    return new_state;
     
 
         
@@ -123,13 +172,13 @@ always_ff @(posedge clock) begin
     case (states)
         s_invalid: begin
             o_req_pri_rdy <= 1;
-            logic grant_had_data = 0;
-            if (i_req_pri_val & o_req_pri_rdy)begin
+            // logic grant_had_data = 0;
+            // if (i_req_pri_val & o_req_pri_rdy)begin
                 
-            end
+            // end
         end
 
-        defaule: begin
+        default: begin
             states <= s_invalid;
         end
     endcase

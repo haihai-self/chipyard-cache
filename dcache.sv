@@ -1,7 +1,5 @@
-// package lsu
-  
-// import tilelink::*;
 
+import MetaData::*;
 parameter encRowBits = 128;
 
 typedef struct packed {
@@ -170,44 +168,6 @@ module BoomWriteBackUnit(
 endmodule; //end module writebackunit
 
 
-/*写回状态转换*/
-function automatic logic[5:0] onProb(logic [3:0] param);
-  localparam Nothing = 2'h0;
-  localparam Branch = 2'h1;
-  localparam Trunk = 2'h2;
-  localparam Dirty = 2'h3;
-
-  localparam toT = 2'h0;
-  localparam toB = 2'h1;
-  localparam toN = 2'h2;
-  
-  localparam TtoT = 3'h3;
-  localparam BtoB = 3'h4;
-  localparam NtoN = 3'h5;
-  localparam TtoB = 3'h0;
-  localparam TtoN = 3'h1;
-  localparam BtoN = 3'h2;
-
-  localparam False = 1'h0 ;
-  localparam True = 1'h1;
-  
-  logic [5:0] result;
-
-  result = {toT, Dirty}     == param    ?   {True,  TtoT, Trunk}        :
-           {toT, Trunk}     == param    ?   {False, TtoT, Trunk}        :
-           {toT, Branch}    == param    ?   {False, BtoB, Branch}       :
-           {toT, Nothing}   == param    ?   {False, NtoN, Nothing}      :
-           {toB, Dirty}     == param    ?   {True,  TtoB, Branch}       :
-           {toB, Trunk}     == param    ?   {False, TtoB, Branch}       :
-           {toB, Branch}    == param    ?   {False, BtoB, Branch}       :
-           {toB, Nothing}   == param    ?   {False, NtoN, Nothing}      :
-           {toN, Dirty}     == param    ?   {True,  TtoT, Nothing}      :
-           {toN, Trunk}     == param    ?   {False, TtoN, Nothing}      :
-           {toN, Branch}    == param    ?   {False, BtoN, Nothing}      :
-           {toN, Nothing}   == param    ?   {False, NtoN, Nothing}      : 0;
-           
-  return result;  
-endfunction
 
 module BoomProbeUnit (
   input logic clock, reset,
