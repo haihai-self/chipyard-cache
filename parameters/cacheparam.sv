@@ -11,7 +11,7 @@ package L1CacheParams;
   parameter nWays       = 8   ;
   parameter rowBits     = 128 ; 
   parameter nTLBEntries = 32   ; 
-  parameter blockBytes  = 64  ;
+  parameter blockBytes  = `blockBytes  ;
 endpackage
 
 
@@ -37,4 +37,15 @@ package HasL1CacheParameters;
   parameter cacheDataBytes = cacheDataBits / 8;
   parameter cacheDataBeats = (L1CacheParams::blockBytes * 8) / cacheDataBits;
   parameter refillCycles = cacheDataBeats;
+endpackage
+
+package HasL1HellaCacheParameters;
+  parameter nMSHRs = 4;
+  parameter cacheBlockBytes = L1CacheParams::blockBytes;
+  parameter encRowBits = BundleParam::dataBits;
+  parameter lgCacheBlockBytes = $clog2(cacheBlockBytes);
+  parameter idxMSB = HasL1CacheParameters::untagBits - 1;
+  parameter idxLSB = `blockOffBits;
+
+
 endpackage

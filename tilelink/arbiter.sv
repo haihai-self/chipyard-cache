@@ -1,9 +1,5 @@
     
-
-typedef struct packed {
-    logic [1:0] id      ;
-    logic [1:0] offset  ;
-} LineBufferReadReqST;
+import BoomLSUST::LineBufferReadReqST;
 
 module Arbiter #(n = 4, type T=LineBufferReadReqST)(
     output  logic                   io_in_ready[n]  ,

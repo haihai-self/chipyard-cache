@@ -1,4 +1,4 @@
-package TLBundleParam;
+package BundleParam;
     localparam addressBits = 32;   
     localparam dataBits    = 128;
     localparam sourceBits  = 3;
@@ -33,5 +33,30 @@ package TLBundleParam;
     localparam TtoT = 3'h3;
     localparam BtoB = 3'h4;
     localparam NtoN = 3'h5;
+    
+endpackage
+
+package TLMessages;
+  localparam PutFullData    = 0; //     .    .                   => AccessAck
+  localparam PutPartialData = 1; //     .    .                   => AccessAck
+  localparam ArithmeticData = 2; //     .    .                   => AccessAckData
+  localparam LogicalData    = 3; //     .    .                   => AccessAckData
+  localparam Get            = 4; //     .    .                   => AccessAckData
+  localparam Hint           = 5; //     .    .                   => HintAck
+  localparam AcquireBlock   = 6; //     .                        => Grant[Data]
+  localparam AcquirePerm    = 7; //     .                        => Grant[Data]
+  localparam Probe          = 6; //          .                   => ProbeAck[Data]
+  localparam AccessAck      = 0; //               .    .
+  localparam AccessAckData  = 1; //               .    .
+  localparam HintAck        = 2; //               .    .
+  localparam ProbeAck       = 4; //               .
+  localparam ProbeAckData   = 5; //               .
+  localparam Release        = 6; //               .              => ReleaseAck
+  localparam ReleaseData    = 7; //               .              => ReleaseAck
+  localparam Grant          = 4; //                    .         => GrantAck
+  localparam GrantData      = 5; //                    .         => GrantAck
+  localparam ReleaseAck     = 6; //                    .
+  localparam GrantAck       = 0; //                         .
+ 
     
 endpackage

@@ -1,7 +1,9 @@
 
 package BoomLSUST;
-
-localparam client_states_width = 2;
+import MemoryOpConstants::M_SZ;
+import BundleParam::*;
+import HasL1CacheParameters::*;
+import HasL1CacheParameters::*;
 
 
 typedef struct packed {
@@ -15,9 +17,9 @@ typedef struct packed {
 
 typedef struct packed {
     logic [`maxBrCount-1:0] br_mask;
-    logic [4:0] ldq_idx;
-    logic [4:0] stq_idx;
-    logic [4:0] mem_cmd;
+    logic [`ldqAddrSz-1:0] ldq_idx;
+    logic [`stqAddrSz-1:0] stq_idx;
+    logic [M_SZ-1:0] mem_cmd;
     logic [1:0] mem_size;
     logic mem_signed;
     logic is_amo;
@@ -30,22 +32,19 @@ typedef struct packed {
     logic [39:0] addr;
     logic is_hella;
     logic tag_match;
-    logic [client_states_width-1: 0] old_meta_coh_state;
-    logic [19:0] old_meta_tag;
-    logic [7:0] way_en;
+    logic [TLPermissions_width-1: 0] old_meta_coh_state;
+    logic [tagBits-1: 0] old_meta_tag;
+    logic [nWays-1: 0] way_en;
     logic [4:0] sdq_id;    
 } BoomDCacheReqInternalST;
 
 
-typedef struct packed {
-    logic valid;
-    logic [1:0] coh;
-} L1MetadataST;
+
 
 typedef struct packed {
     logic [1:0] id;
     logic [1:0] offset;
-    logic [127:0] data;
+    logic [dataBits-1:0] data;
 } LineBufferWriteReqST;
 
 typedef struct packed {
@@ -59,15 +58,14 @@ typedef struct packed {
     logic [1:0] offset  ;
 } LineBufferReadReqST;
 
-typedef struct packed {
-    logic [3:0] sink;
-} TLBundleEST;
 
 typedef struct packed {
-    logic valid;
-    TLBundleEST bits;
-} ValidTLBundleEST;
-
-
+    logic needs_second_acq;
+    logic hit_again;
+    logic dirties;
+    logic [TLPermissions_width-1: 0] biggest_grow_param;
+    logic [TLPermissions_width-1: 0] dirtiest_state;
+    logic [M_SZ-1: 0] dirtiest_cmd;
+} onSecondaryAccessST;
 
 endpackage

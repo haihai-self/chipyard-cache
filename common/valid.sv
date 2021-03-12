@@ -1,13 +1,13 @@
 
 
-interface ValidIF #(bits_size=6);
+interface ValidIF #(parameter bits_size=6);
     logic valid;
     logic [bits_size-1:0] bits;
 
-    modport outputdata (
+    modport out (
     output valid, bits
     );
-    modport inputdata (
-    output valid, bits
+    modport in (
+    input valid, bits
     );
 endinterface //ValidIF

@@ -43,15 +43,25 @@ function logic isAMOArithmetic(logic [4:0] cmd);
     return cmd inside {M_XA_ADD, M_XA_MIN, M_XA_MAX, M_XA_MINU, M_XA_MAXU};
 endfunction
 
+function logic isAMO(logic [4:0] cmd);
+    return isAMOLogical(cmd) || isAMOArithmetic(cmd);
+endfunction
+
 function logic isPrefetch(logic [4:0] cmd);
     return cmd == M_PFR || cmd == M_PFW; 
 endfunction
 
-function logic isAMO(logic [4:0] cmd);
-    return isAMOLogical(cmd) || isAMOArithmetic(cmd);
+function logic isRead(logic[4:0] cmd);
+    return cmd == M_XRD || cmd == M_XLR || cmd == M_XSC || isAMO(cmd);
 endfunction
+
 function logic isWrite(logic [4:0] cmd);
     return cmd == M_XWR || cmd == M_PWR || cmd == M_XSC || isAMO(cmd);    
+endfunction
+
+function logic isWriteIntent(logic[4:0] cmd);
+    return isWrite(cmd) || cmd == M_PFW || cmd == M_XLR;
+    
 endfunction
 
 endpackage
