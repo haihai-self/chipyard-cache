@@ -1,22 +1,28 @@
 
 
 
-module BoomWriteBackUnit(
-  input logic clock,
-  input logic reset,
-  DecoupledIF.out io_req,
-  DecoupledIF.in io_meta_read,
-  output logic io_resp,
-  ValidIF.out io_idx,
-  DecoupledIF.in io_data_req,
-  input logic [HasL1HellaCacheParameters::encRowBits-1 : 0] io_data_resp,
-  input logic io_mem_grant,
-  DecoupledIF.in io_release,
-  DecoupledIF.in io_lsu_release
-  );
+module BoomWriteBackUnit (
+    input  logic                                                         clock,
+    input  logic                                                         reset,
+           DecoupledIF.out                                               io_req,
+           DecoupledIF.in                                                io_meta_read,
+    output logic                                                         io_resp,
+           ValidIF.out                                                   io_idx,
+           DecoupledIF.in                                                io_data_req,
+    input  logic           [HasL1HellaCacheParameters::encRowBits-1 : 0] io_data_resp,
+    input  logic                                                         io_mem_grant,
+           DecoupledIF.in                                                io_release,
+           DecoupledIF.in                                                io_lsu_release
+);
 
   NBDcacheST::WriteBackReqST req;
-  typedef enum {s_invalid, s_fill_buffer, s_lsu_release, s_active, s_grant} writebackstates;
+  typedef enum {
+    s_invalid,
+    s_fill_buffer,
+    s_lsu_release,
+    s_active,
+    s_grant
+  } writebackstates;
   writebackstates states;
   logic r1_data_req_fired;
   logic r2_data_req_fired;
@@ -30,21 +36,25 @@ module BoomWriteBackUnit(
   BundleST::TLBundleCST probeResponse;
   BundleST::TLBundleCST voluntaryRelease;
 
-  logic [BundleParam::addressBits-1: 0] r_address;
+  logic [BundleParam::addressBits-1:0] r_address;
   assign r_address = {req.tag, req.idx} << `blockOffBits;
 
-  assign probeResponse = Edge::ProbeAck(.fromSource(HasL1HellaCacheParameters::nMSHRs),
-                                  .toAddress(r_address),
-                                  .lgSize(HasL1HellaCacheParameters::lgCacheBlockBytes),
-                                  .reportPermissions(req.param),
-                                  .data(wb_buffer[data_req_cnt[$clog2(HasL1CacheParameters::refillCycles)-1: 0]]));
+  assign probeResponse = Edge::ProbeAck(
+  .fromSource(HasL1HellaCacheParameters::nMSHRs),
+  .toAddress(r_address),
+  .lgSize(HasL1HellaCacheParameters::lgCacheBlockBytes),
+  .reportPermissions(req.param),
+  .data(wb_buffer[data_req_cnt[$clog2(HasL1CacheParameters::refillCycles) - 1:0]])
+  );
 
-  assign voluntaryRelease = Edge::Release(.fromSource(HasL1HellaCacheParameters::nMSHRs),
-                                    .toAddress(r_address),
-                                    .lgSize(HasL1HellaCacheParameters::lgCacheBlockBytes),
-                                    .shrinkPermissions(req.param),
-                                    .data(wb_buffer[data_req_cnt[$clog2(HasL1CacheParameters::refillCycles)-1: 0]]));
-  
+  assign voluntaryRelease = Edge::Release(
+  .fromSource(HasL1HellaCacheParameters::nMSHRs),
+  .toAddress(r_address),
+  .lgSize(HasL1HellaCacheParameters::lgCacheBlockBytes),
+  .shrinkPermissions(req.param),
+  .data(wb_buffer[data_req_cnt[$clog2(HasL1CacheParameters::refillCycles) - 1:0]])
+  );
+
   logic io_req_fire;
   logic io_meta_read_fire;
   logic io_data_req_fire;
@@ -62,7 +72,7 @@ module BoomWriteBackUnit(
   always_comb begin
     /*initial output */
 
-    io_idx.valid = states!=s_invalid;
+    io_idx.valid = states != s_invalid;
     io_idx.bits = req.idx;
     io_release.valid = 0;
     io_release.bits = 0;
@@ -82,16 +92,15 @@ module BoomWriteBackUnit(
         io_meta_read.valid <= data_req_cnt < HasL1CacheParameters::refillCycles;
         io_meta_read.bits.idx <= req.idx;
         io_meta_read.bits.idx <= req.tag;
-        
-        io_data_req.valid <= data_req_cnt < HasL1CacheParameters::refillCycles ;
+
+        io_data_req.valid <= data_req_cnt < HasL1CacheParameters::refillCycles;
         io_data_req.bits.way_en <= req.way_en;
-        io_data_req.bits.addr <= ((HasL1CacheParameters::refillCycles > 1)? 
-                                  {req.idx, data_req_cnt[$clog2(HasL1CacheParameters::refillCycles)-1: 0]}: 
-                                  req.idx) 
-                                  <<HasL1CacheParameters::rowOffBits;
-                  
+        io_data_req.bits.addr <= ((HasL1CacheParameters::refillCycles > 1) ? {
+          req.idx, data_req_cnt[$clog2(HasL1CacheParameters::refillCycles) - 1:0]
+        } : req.idx) << HasL1CacheParameters::rowOffBits;
+
         if (r2_data_req_fired) begin
-          if (r2_data_req_cnt == HasL1CacheParameters::refillCycles-1) begin
+          if (r2_data_req_cnt == HasL1CacheParameters::refillCycles - 1) begin
             io_resp <= 1;
           end
         end
@@ -104,7 +113,7 @@ module BoomWriteBackUnit(
 
       s_active: begin
         io_release.valid <= data_req_cnt < HasL1CacheParameters::refillCycles;
-        io_release.bits <= req.voluntary? voluntaryRelease: probeResponse;
+        io_release.bits <= req.voluntary ? voluntaryRelease : probeResponse;
       end  //end s_activate
     endcase
   end
@@ -112,23 +121,22 @@ module BoomWriteBackUnit(
 
   //控制信号赋值
   always_ff @(posedge clock or posedge reset) begin
-    if (reset)begin
+    if (reset) begin
       req <= 0;
       r1_data_req_fired <= 0;
       r2_data_req_fired <= 0;
       r1_data_req_cnt <= 0;
       r2_data_req_cnt <= 0;
       data_req_cnt <= 0;
-      for (int i=0; i<HasL1CacheParameters::refillCycles; i++)begin
+      for (int i = 0; i < HasL1CacheParameters::refillCycles; i++) begin
         wb_buffer[i] <= 128'b0;
       end
       acked <= 0;
 
-    end
-    else begin
+    end else begin
       case (states)
         s_invalid: begin
-          if (io_req_fire)begin
+          if (io_req_fire) begin
             data_req_cnt <= 0;
             req <= io_req.bits;
             acked <= 0;
@@ -142,15 +150,16 @@ module BoomWriteBackUnit(
           r2_data_req_fired <= r1_data_req_fired;
           r2_data_req_cnt <= r1_data_req_cnt;
 
-          if (io_data_req_fire && io_meta_read_fire)begin
+          if (io_data_req_fire && io_meta_read_fire) begin
             r1_data_req_fired <= 1;
             r1_data_req_cnt <= data_req_cnt;
             data_req_cnt <= data_req_cnt + 1;
-          end                                  
+          end
 
           if (r2_data_req_fired) begin
-            wb_buffer[r2_data_req_cnt[$clog2(HasL1CacheParameters::refillCycles)-1: 0]] <= io_data_resp;
-            if (r2_data_req_cnt == HasL1CacheParameters::refillCycles-1) begin
+            wb_buffer[r2_data_req_cnt[$clog2(HasL1CacheParameters::refillCycles) - 1:0]] <=
+                io_data_resp;
+            if (r2_data_req_cnt == HasL1CacheParameters::refillCycles - 1) begin
               data_req_cnt <= 0;
             end
           end
@@ -161,17 +170,14 @@ module BoomWriteBackUnit(
         end  //end s_lsu_release
 
         s_active: begin
-          if (io_mem_grant)
-            acked <= 1;
-          if (io_release_fire)
-            data_req_cnt <= data_req_cnt + 1; 
+          if (io_mem_grant) acked <= 1;
+          if (io_release_fire) data_req_cnt <= data_req_cnt + 1;
         end  //end s_activate
 
         s_grant: begin
-          if (io_mem_grant)
-            acked <= 1;
+          if (io_mem_grant) acked <= 1;
         end
-        
+
         default: begin
           req <= 0;
         end
@@ -181,39 +187,36 @@ module BoomWriteBackUnit(
 
   //状态转移
   always_ff @(posedge clock or posedge reset) begin
-    if (reset)begin
+    if (reset) begin
       states <= s_invalid;
-    end
-    else begin
+    end else begin
       case (states)
         s_invalid: begin
-          if (io_req_fire)begin
+          if (io_req_fire) begin
             states <= s_fill_buffer;
           end
         end  //end s_invalid
 
-        s_fill_buffer: begin                              
+        s_fill_buffer: begin
           if (r2_data_req_fired) begin
-            if (r2_data_req_cnt == HasL1CacheParameters::refillCycles-1) begin
+            if (r2_data_req_cnt == HasL1CacheParameters::refillCycles - 1) begin
               states <= s_lsu_release;
             end
           end
         end  //edn s_fill_buffer
 
         s_lsu_release: begin
-          if (io_lsu_release_fire)
-            states <= s_active;
+          if (io_lsu_release_fire) states <= s_active;
         end  //end s_lsu_release
 
         s_active: begin
-          if (data_req_cnt == HasL1CacheParameters::refillCycles-1 && io_release_fire)
-            states <= req.voluntary? s_grant: s_invalid;
+          if (data_req_cnt == HasL1CacheParameters::refillCycles - 1 && io_release_fire)
+            states <= req.voluntary ? s_grant : s_invalid;
         end  //end s_activate
 
         s_grant: begin
-          
-          if (acked)
-            states <= s_invalid;
+
+          if (acked) states <= s_invalid;
         end
 
         default: begin
