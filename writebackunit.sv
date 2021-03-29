@@ -2,17 +2,18 @@
 
 
 module BoomWriteBackUnit (
-    input  logic                                                         clock,
-    input  logic                                                         reset,
-           DecoupledIF.out                                               io_req,
-           DecoupledIF.in                                                io_meta_read,
-    output logic                                                         io_resp,
-           ValidIF.out                                                   io_idx,
-           DecoupledIF.in                                                io_data_req,
-    input  logic           [HasL1HellaCacheParameters::encRowBits-1 : 0] io_data_resp,
-    input  logic                                                         io_mem_grant,
-           DecoupledIF.in                                                io_release,
-           DecoupledIF.in                                                io_lsu_release
+    input  logic                                               clock,
+    input  logic                                               reset,
+    output logic                                               io_resp,
+    input  logic [HasL1HellaCacheParameters::encRowBits-1 : 0] io_data_resp,
+    input  logic                                               io_mem_grant,
+
+    DecoupledIF.out io_req,
+    DecoupledIF.in  io_meta_read,
+    ValidIF.out     io_idx,
+    DecoupledIF.in  io_data_req,
+    DecoupledIF.in  io_release,
+    DecoupledIF.in  io_lsu_release
 );
 
   NBDcacheST::WriteBackReqST req;

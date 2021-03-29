@@ -1,20 +1,21 @@
 
 
 module BoomProbeUnit (
-    input  logic                                                  clock,
-    input  logic                                                  reset,
-           DecoupledIF.out                                        io_req,
-           DecoupledIF.in                                         io_rep,
-           DecoupledIF.in                                         io_meta_read,
-           DecoupledIF.in                                         io_meta_write,
-           DecoupledIF.in                                         io_wb_req,
-    input  logic           [     HasL1CacheParameters::nWays-1:0] io_way_en,
-    input  logic                                                  io_wb_rdy,
-    input  logic                                                  io_mshr_rdy,
-    output logic                                                  io_mshr_wb_rdy,
-    input                  [BundleParam::TLPermissions_width-1:0] io_block_state,
-           DecoupledIF.in                                         io_lsu_release,
-           ValidIF.out                                            io_state
+    input  logic                                        clock,
+    input  logic                                        reset,
+    input  logic [     HasL1CacheParameters::nWays-1:0] io_way_en,
+    input  logic                                        io_wb_rdy,
+    input  logic                                        io_mshr_rdy,
+    output logic                                        io_mshr_wb_rdy,
+    input        [BundleParam::TLPermissions_width-1:0] io_block_state,
+
+    DecoupledIF.out io_req,
+    DecoupledIF.in  io_rep,
+    DecoupledIF.in  io_meta_read,
+    DecoupledIF.in  io_meta_write,
+    DecoupledIF.in  io_wb_req,
+    DecoupledIF.in  io_lsu_release,
+    ValidIF.out     io_state
 );
 
   //assign fire
