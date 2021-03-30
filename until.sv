@@ -1,134 +1,145 @@
 
-import BoomLSUST::*;
-
 function automatic logic isPow2(int n);
-    if (n < 1) return 0;
-    return (n & (n-1))==0;
+  if (n < 1) return 0;
+  return (n & (n - 1)) == 0;
 endfunction
 
 
-function automatic [`maxBrCount-1: 0] getNewBrMask(
-                        BrUpdateInfoST brupdate,
-                        logic [`maxBrCount-1: 0] br_mask);
-    return br_mask & ~brupdate.b1.resolve_mask;
+function automatic [`maxBrCount-1:0] getNewBrMask(ExuST::BrUpdateInfoST brupdate,
+                                                    logic [`maxBrCount-1:0] br_mask);
+  return br_mask & ~brupdate.b1.resolve_mask;
 endfunction
 
-function automatic logic maskMatch(
-                logic[`maxBrCount-1:0] msk1,
-                logic[`maxBrCount-1:0] msk2);
-    return (msk1 & msk2) != 0;
+function automatic logic maskMatch(logic [`maxBrCount-1:0] msk1, logic [`maxBrCount-1:0] msk2);
+  return (msk1 & msk2) != 0;
 endfunction
 
 
-function automatic logic isKilledByBranch(
-                BrUpdateInfoST brupdate, 
-                logic [`maxBrCount-1: 0] br_mask);
-    return maskMatch(brupdate.b1.resolve_mask, br_mask);
+function automatic logic isKilledByBranch(ExuST::BrUpdateInfoST brupdate,
+                                          logic [`maxBrCount-1:0] br_mask);
+  return maskMatch(brupdate.b1.resolve_mask, br_mask);
 endfunction
 
-function automatic logic flush_fn(MicroOpST uop);
-    return uop.uses_ldq;
+function automatic logic flush_fn(Micro::MicroOpST uop);
+  return uop.uses_ldq;
 endfunction
 
 module BranchKillableQueue #(
-    parameter   entries =   16                      ,
-    parameter   flow    =   0                       ,
-    type        T       =   BoomDCacheReqInternalST
+    parameter entries = 16,
+    parameter flow = 0,
+    type T = MSHRST::BoomDCacheReqInternalST
 ) (
-    input   logic                           clock           ,
-    input   logic                           reset           ,
+    input  logic                       clock,
+    input  logic                       reset,
+    input  logic                       io_flush,
+    output logic                       io_empty,
+    output logic [$clog2(entries)-1:0] io_count,
 
-    output  logic                           o_enq_ready     ,
-    input   logic                           i_enq_valid     ,
-    input   T                               i_enq           ,
-    
-    input   logic                           i_deq_ready     ,
-    output  logic                           o_deq_ready     ,
-    output  T                               o_deq           ,
-    
-    input   BrUpdateInfoST                  i_brupdate      ,
-    input   logic                           i_flush         ,
-    
-    output  logic                           o_empty         ,
-    output  logic [$clog2(entries)-1: 0]    o_count
+    input ExuST::BrUpdateInfoST io_brupdate,
+
+    DecoupledIF.out io_enq,  //T
+    DecoupledIF.in  io_deq  //T
 );
-    T ram [entries-1:0];
-    logic [entries-1:0]valids;
-    MicroOpST uops [entries-1:0];
 
-    logic [$clog2(entries-1):0] enq_ptr;
-    logic [$clog2(entries-1):0] deq_ptr;
+  T ram[entries-1:0];
+  logic [entries-1:0] valids;  //init with false
+  Micro::MicroOpST uops[entries-1:0];
+  logic [$clog2(entries)-1:0] enq_ptr;  //counter
+  logic [$clog2(entries)-1:0] deq_ptr;  //counter
+  logic maybe_full;  //可能队列满了
 
-    logic maybe_full;
-    logic full;
-    logic do_enq;
-    logic do_deq;
-    logic ptr_match;
-    T out;
+  //wire
+  logic ptr_match;
+  logic full;
+  logic do_deq;
+  logic do_enq;
+  T out;
+  logic [$clog2(entries-1):0] ptr_diff;
 
-    assign ptr_match = enq_ptr == deq_ptr;
-    assign o_empty = ptr_match & ~maybe_full;
-    assign full = ptr_match & maybe_full;
+  //assign wire
+  always_comb begin
+    // init wire
+    do_enq = io_enq.valid && io_enq.ready;
+    do_deq = (io_deq.valid && valids[deq_ptr]) && !io_empty;
 
-    assign o_enq_ready = ~full;
+    // assign wire
+    full = ptr_match && maybe_full;  //队列满
+    ptr_match = enq_ptr == deq_ptr;  //出队数量等于入队数量
 
-    assign out = ram[deq_ptr];
-    assign out.uop = uops[deq_ptr];
-    assign o_deq_ready = !o_empty && 
-                          valids[deq_ptr] && 
-                          isKilledbyBrcanch(i_brupdate, out.uop.br_mask) &&
-                          (i_flush && flush_fn(out.uop));
-    assign o_deq = out;
-    assign o_deq.uop.br_mask = GetNewBrMask(i_brupdate, out.uop.br_mask);
+    out = ram[deq_ptr];
+    out.uop = uops[deq_ptr];
 
-    always_ff @(posedge clock) begin
-        for (int i=0; i<entries; i++)begin
-            valids[i] <= valids[i]                                          && 
-                         !isKilledbyBrcanch(i_brupdate, uops[i].br_mask)    && 
-                         !(i_flush && flush_fn(uops[i]));
-            if(valids[i])
-                uops[i].br_mask <= GetNewBrMask(i_brupdate, uops[i].br_mask);
-        end
-
-        if (do_enq) begin  //入队
-            ram[enq_ptr] <= i_enq;
-            valids[enq_ptr] <= 1;
-            uops[enq_ptr] <= i_enq.uop;
-            uops[enq_ptr].br_mask <= GetNewBrMask(i_brupdate, i_enq.uop.br_mask);
-            enq_ptr <= enq_ptr + 1;
-        end
-
-        if (do_deq)begin  //出队
-            valids[deq_ptr] <= 0;
-            deq_ptr <= deq_ptr + 1;
-        end
-
-        if (do_deq != do_enq)
-            maybe_full <= do_enq; 
+    //流式队列 直接出队入队
+    if (flow) begin
+      if (io_empty) begin
+        do_deq = false;
+        if (io_deq.ready) do_enq = false;
+      end
     end
 
-    always_ff @(posedge clock) begin
-        if (flow) begin
-            o_deq_ready <= i_enq_valid;
-            o_deq <= i_enq;
-            o_deq.br_mask <= GetNewBrMask(i_brupdate, i_enq.uop.br_mask);
-            do_deq <= 0;
-            if (i_deq_ready) 
-                do_enq <= 0;
-        end
+    //队列元素个数
+    ptr_diff = enq_ptr - deq_ptr;
+
+
+  end
+
+  //assign io
+  always_comb begin
+
+    io_empty = ptr_match & ~maybe_full;
+    io_enq.ready = !full;
+
+    //出队数据更新
+    io_deq.valid = !io_empty && valids[deq_ptr] &&
+        isKilledbyBrcanch(io_brupdate, out.uop.br_mask) && (io_flush && flush_fn(out.uop));
+    io_deq.bits = out;
+    io_deq.bits.uop.br_mask = GetNewBrMask(io_brupdate, out.uop.br_mask);
+
+    //流式队列 直接出队入队
+    if (flow) begin
+      if (io_empty) begin
+        io_deq.valid = io_enq.valid;
+        io_deq.bits = io_enq.bits;
+        io_deq.bits.uop.br_mask = GetNewBrMask(io_brupdate, io_enq.bits.uop);
+
+      end
     end
 
-    logic [$clog2(entries-1):0] ptr_diff;
-    assign ptr_diff = enq_ptr - deq_ptr;
+    if (isPow2(entries)) io_count = {maybe_full && ptr_match, ptr_diff};
+    else
+      io_count = ptr_match ? (maybe_full ? entries : 0) : (
+          deq_ptr > enq_ptr ? (entries + ptr_diff) : ptr_diff
+          );  //要是出队大于入队用加法是不是不太好
+  end
 
-    always_comb begin
-        if (isPow2(entries))
-            o_count = {maybe_full && ptr_match, ptr_diff};
-        else 
-            o_count = ptr_match ? (maybe_full ? entries : 0) : 
-                                 (deq_ptr > enq_ptr ? (entries + ptr_diff) : ptr_diff);
+  always_ff @(posedge clock or posedge reset) begin
+    if (reset) begin
+      maybe_full <= 0;
+      valids <= 0;
 
+    end else begin
+      for (int i = 0; i < entries; i++) begin
+        valids[i] <= valids[i] && !isKilledbyBrcanch(io_brupdate, uops[i].br_mask) &&
+            !(io_flush && flush_fn(uops[i]));
+        // if valids是旧的值还是新的值？
+        if (valids[i]) uops[i].br_mask <= GetNewBrMask(i_brupdate, uops[i].br_mask);
+      end
     end
 
+    if (do_enq) begin  //入队
+      ram[enq_ptr] <= io_enq.bits;
+      valids[enq_ptr] <= 1;
+      uops[enq_ptr] <= io_enq.bits.uop;
+      uops[enq_ptr].br_mask <= GetNewBrMask(io_brupdate, io_enq.bits.uop.br_mask);
+      enq_ptr <= enq_ptr + 1;
+    end
+
+    if (do_deq) begin  //出队
+      valids[deq_ptr] <= 0;
+      deq_ptr <= deq_ptr + 1;
+    end
+
+    if (do_deq != do_enq) maybe_full <= do_enq;
+  end
 
 endmodule
