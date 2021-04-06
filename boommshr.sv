@@ -46,6 +46,9 @@ module BoomMSHR (
   logic io_wb_req_fire;
   logic io_refill_fire;
   logic io_mem_finish_fire;
+  logic io_lb_read_fire;
+  logic io_mem_grant_fire;
+  logic io_replay_fire;
 
 
   always_comb begin
@@ -55,6 +58,9 @@ module BoomMSHR (
     io_wb_req_fire = io_wb_req.valid && io_wb_req.ready;
     io_refill_fire = io_refill.valid && io_refill.ready;
     io_mem_finish_fire = io_mem_finish.valid && io_mem_finish.ready;
+    io_lb_read_fire = io_lb_read.valid && io_lb_read.ready;
+    io_mem_grant_fire = io_mem_grant.valid && io_mem_grant.ready;
+    io_replay_fire = io_replay.valid && io_replay.ready;
 
   end
 
@@ -100,13 +106,17 @@ module BoomMSHR (
   logic [BundleParam::TLPermissions_width-1:0] coh_on_clear;
   logic [BundleParam::TLPermissions_width-1:0] grow_param;
   logic [BundleParam::TLPermissions_width-1:0] coh_on_grant;
-  logic refill_done;
+  logic [BundleParam::TLPermissions_width-1:0] coh_on_hit_s_drain_rpq;
+  logic [BundleParam::TLPermissions_width-1:0] coh_on_hit_s_prefetch;
   logic sec_rdy;
   logic [5:0] on_cache_result;
   logic drain_load;
   logic needs_wb;
-  logic commit_line;
-  logic is_hit;
+  logic is_hit_s_prefetch;
+  logic [39:0] rp_addr;
+  logic data_word_hi;
+  logic [127:0] data_word;
+
 
 
   assign req_idx = req.addr[HasL1CacheParameters::untagBits - 1:`blockOffBits];
@@ -121,9 +131,27 @@ module BoomMSHR (
 
   assign osa = onSecondaryAccess(new_coh, req.uop.mem_cmd, io_req.uop.mem_cmd);
 
-  // logic refill_done;
-  // logic refill_address_inc;
-  // ... = edge::addr_inc(io_mem_grant)  // check need to imp addr_inc;
+  // generate refill_done and refill_address_inc
+  logic refill_done;
+  logic [11:0] refill_address_inc;
+  logic [7:0] counter;
+  wire [26:0] _beats1_decode_T_1 = 27'hfff << io_mem_grant.bits.size;
+  wire [11:0] _beats1_decode_T_3 = ~_beats1_decode_T_1[11:0];
+  wire [7:0] beats1_decode = _beats1_decode_T_3[11:4];
+  wire beats1_opdata = io_mem_grant.bits.opcode[0];
+  wire [7:0] beats1 = beats1_opdata ? beats1_decode : 8'h0;
+  wire first = counter == 0;
+  wire last = counter == 1 || beats1 == 0;
+  wire [7:0] counter1 = counter - 1;
+  assign refill_done = io_mem_grant_fire && last;
+  assign refill_address_inc = {beats1 & counter1, 4'h0};
+  always_ff @(posedge clock or posedge reset) begin
+    if (reset) begin
+      counter <= 0;
+    end else begin
+      if (io_mem_grant_fire) counter <= first ? beats1 : counter1;
+    end
+  end
 
   assign sec_rdy = !osa.needs_second_acq && !io_req_is_probe && (
       states inside {s_invalid, s_meta_write_req, s_mem_finish_1, s_mem_finish_2});
@@ -132,6 +160,7 @@ module BoomMSHR (
   logic rpq_io_empty;
   logic [$clog2(DCacheParams::nRPQ)-1:0] rpq_io_count;
   logic rpq_io_enq_fire;
+  logic rpq_io_deq_fire;
 
   DecoupledIF #(.T(MSHRST::BoomDCacheReqInternalST)) rpq_io_deq ();
   DecoupledIF #(.T(MSHRST::BoomDCacheReqInternalST)) rpq_io_enq ();
@@ -163,6 +192,7 @@ module BoomMSHR (
     rpq_io_enq.bits = io_req;
     rpq_io_deq.ready = 0;
     rpq_io_enq_fire = rpq_io_enq.valid && rpq_io_enq.ready;
+    rpq_io_deq_fire = rpq_io_deq.valid && rpq_o_deq.ready;
 
     if (states == s_drain_rpq_loads) begin
       rpq_io_deq.ready = io_resp.ready && io_lb_read.ready && drain_load;
@@ -184,7 +214,9 @@ module BoomMSHR (
       is_hit = on_access[2];
       coh_on_hit = on_access[1:0];
       if (is_hit) begin
-        assert (isWrite(io_req.uop.mem_cmd));
+        iswriteok :
+        assert (isWrite(io_req.uop.mem_cmd))
+        else $error("Assertion iswriteok failed!");
         new_coh = coh_on_hit;
         new_state = s_drain_rpq;
       end else begin
@@ -192,7 +224,7 @@ module BoomMSHR (
         new_state = s_refill_req;
       end
     end else begin
-      new_coh = BundleParam::Nothing;
+      new_coh = 0;
       new_state = s_refill_req;
     end
 
@@ -222,10 +254,45 @@ module BoomMSHR (
   always_comb begin
     on_cache_result = onCacheControl(io_req.old_meta.coh, MemoryOpConstants::M_FLUSH);
 
-    if (states == s_drain_rpq_loads) begin
-      drain_load = (isRead(rpq_io_deq.bits.uop.mem_cmd) && !isWrite(rpq_io_deq.bits.uop.mem_cmd) &&
-                    (rpq_io_deq.bits.mem_cmd != MemoryOpConstants::M_XLR));
-    end
+    case (states)
+
+      s_drain_rpq_loads: begin
+        drain_load = (isRead(rpq_io_deq.bits.uop.mem_cmd) && !isWrite(rpq_io_deq.bits.uop.mem_cmd)
+                      && (rpq_io_deq.bits.mem_cmd != MemoryOpConstants::M_XLR));
+        rp_addr = {req_tag, req_idx, rpq_io_deq.bits.addr[`blockOffBits - 1:0]};
+        data_word_hi = rp_addr[3];
+        data_word = io_lb_resp >> ({data_word_hi, 6'h0});
+
+      end
+
+      s_meta_resp_2: begin
+        logic [5:0] temp;
+        temp = onCacheControl(io_meta_resp.bits.coh, MemoryOpConstants::M_FLUSH);
+        needs_wb = temp[5];
+      end
+
+      s_drain_rpq: begin
+        if (io_replay_fire && isWrite(rpq_io_deq.bits.uop.mem_cmd)) begin
+          logic is_hit_s_drain_rpq;
+          logic [2:0] on_access;
+          on_access = onAccess(new_coh, rpq_io_deq.bits.uop.mem_cmd);
+          is_hit_s_drain_rpq = on_access[2];
+          coh_on_hit_s_drain_rpq = on_access[1:0];
+          assert (is_hit_s_drain_rpq)
+          else $error("Assertion label failed!");
+        end
+      end
+
+      s_prefetch: begin
+        if (io_replay_fire && isWrite(rpq_io_deq.bits.uop.mem_cmd)) begin
+          logic [2:0] on_access;
+          on_access = onAccess(new_coh, io_req.uop.mem_cmd);
+          is_hit_s_prefetch = on_access[2];
+          coh_on_hit_s_prefetch = on_access[1:0];
+        end
+
+      end
+    endcase
   end
 
   // assign io
@@ -256,19 +323,108 @@ module BoomMSHR (
     io_lb_write.valid = 0;
     io_lb_read.valid = 0;
 
-    // assign io
-    if (states == s_drain_rpq_loads) begin
-      io_lb_read.valid = rpq_io_deq.valid && drain_load;
-      io_lb_read.bits.id = io_id;
-      io_lb_read.bits.offset = rpq_io_deq.bits.addr >> HasL1CacheParameters::rowOffBits;
-    end
 
+    // assign io
     case (states)
       s_invalid: begin
         io_req_pri_rdy = 1;
       end
-      default: begin
 
+      s_refill_req: begin
+        io_mem_acquire.valid = 1;
+        io_mem_acquire.bits = AcquireBlock(
+        .fromSource(io_id),
+        .toAddress({req_tag, req_idx} << `blockOffBits),
+        .lgSize(HasL1HellaCacheParameters::lgCacheBlockBytes),
+        .growPermissions(grow_param)
+        );
+      end
+
+      s_refill_resp: begin
+        if (hasDataD(io_mem_grant.bits)) begin  //need to imp hasdata
+          io_mem_grant.ready = io_lb_write.ready;
+          io_lb_write.valid = io_mem_grant.valid;
+          io_lb_write.bits.id = io_id;
+          io_lb_write.bits.offset = refill_address_inc >> HasL1CacheParameters::rowOffBits;
+          io_lb_write.bits.data = io_mem_grant.bits.data;
+        end else begin
+          io_mem_grant.ready = 1;
+        end
+      end
+
+      s_drain_rpq_loads: begin
+        io_lb_read.valid = rpq_io_deq.valid && drain_load;
+        io_lb_read.bits.id = io_id;
+        io_lb_read.bits.offset = rpq_io_deq.bits.addr >> HasL1CacheParameters::rowOffBits;
+
+        io_resp.valid = rpq_io_deq.valid && io_lb_read_fire && drain_load;
+        io_resp.bits.uop = rpq_io_deq.bits.uop;
+        io_resp.bits.data = loadgen_data();
+        io_resp.bits.is_hella = rpq_io_deq.bits.is_hella;
+
+        if (rpq_io_empty || (rpq_io_deq.valid && drain_load)) io_commit_val = 1;
+      end
+
+      s_meta_read: begin
+        io_meta_read.valid = io_prober_state.valid || !grantack_valid || (
+            io_prober_state.bits[HasL1CacheParameters::untagBits - 1:`blockOffBits] != req_idx);
+        io_meta_read.bits.idx = req_idx;
+        io_meta_read.bits.tag = req_tag;
+        io_meta_read.bits.way_en = req.way_en;
+      end
+
+      s_meta_clear: begin
+        io_meta_write.valid = 1;
+        io_meta_write.bits.idx = req_idx;
+        io_meta_write.bits.data.coh = coh_on_clear;
+        io_meta_write.bits.data.tag = req_tag;
+        io_meta_write.bits.way_en = req.way_en;
+      end
+
+      s_wb_req: begin
+        io_wb_req.valid = 1;
+        io_wb_req.bits.tag = req.old_meta.tag;
+        io_wb_req.bits.idx = req_idx;
+        io_wb_req.bits.param = shrink_param;
+        io_wb_req.bits.way_en = req.way_en;
+        io_wb_req.bits.source = io_id;
+        io_wb_req.bits.voluntary = 1;
+      end
+
+      s_wb_resp: begin
+        io_lb_read.valid = 1;
+        io_lb_read.bits.id = io_id;
+        io_lb_read.bits.offset = refill_ctr;
+
+        io_refill.valid = io_lb_read_fire;
+        io_refill.bits.addr = req_block_addr | (refill_ctr << HasL1CacheParameters::rowOffBits);
+        io_refill.bits.way_en = req.way_en;
+        io_refill.bits.wmask = 1;
+        io_refill.bits.data = io_resp;
+      end
+
+      s_drain_rpq: begin
+        io_replay.valid = rpq_io_deq.valid;
+        io_replay.bits = rpq_io_deq.bits;
+        io_replay.bits.way_en = req.way_en;
+        io_replay.bits.addr = {req_tag, req_idx, rpq_io_deq.bits.addr[`blockOffBits - 1:0]};
+      end
+
+      s_meta_write_req: begin
+        io_meta_write.valid = 1;
+        io_meta_write.bits.idx = req_idx;
+        io_meta_write.bits.data.coh = new_coh;
+        io_meta_write.bits.data.tag = req_tag;
+        io_meta_write.bits.way_en = req.way_en;
+      end
+
+      s_mem_finish_1: begin
+        io_mem_finish.valid = grantack_valid;
+        io_mem_finish.bits = grantack;
+      end
+
+      s_prefetch: begin
+        io_req_pri_rdy = 1;
       end
     endcase
 
@@ -288,10 +444,50 @@ module BoomMSHR (
       case (states)
         s_invalid: begin
           grant_had_data <= 0;
-          if (io_req_pri_val && io_req_sec_rdy) handle_prio_reg();
         end
-        default: begin
 
+        s_refill_resp: begin
+          if (io_mem_grant_fire) grant_had_data <= hasDataD(io_mem_grant.bits);
+
+          if (refill_done) begin
+            grantack_valid <= isRequeste(io_mem_grant.bits);
+            grantack <= GrantAckST(io_mem_grant.bits);
+            assert (!(!grant_had_data && req_needs_wb));  //need to check error
+            commit_line <= 0;
+            new_coh <= coh_on_grant;
+          end
+        end
+
+        s_drain_rpq_loads: begin
+          if (rpq_io_deq_fire) commit_line <= 1;
+          else if (rpq_io_empty && !commit_line) begin
+            if (rpq_io_enq_fire) finish_to_prefetch <= `enablePrefetching;
+          end
+        end
+        s_commit_line: begin
+          if (io_refill_fire) begin
+            refill_ctr <= refill_ctr + 1;
+          end
+        end
+        s_drain_rpq: begin
+          if (io_replay_fire && isWrite(rpq_io_deq.bits.uop.mem_cmd)) begin
+            new_coh <= coh_on_hit_s_drain_rpq;
+          end
+        end
+
+        s_meta_write_req: begin
+          if (io_meta_write_fire) finish_to_prefetch <= 1;
+        end
+
+        s_mem_finish_1: begin
+          if (io_mem_finish_fire || !grantack_valid) grantack_valid <= 0;
+        end
+
+        s_prefetch: begin
+          if (io_req_sec_val && io_req_sec_rdy) begin
+            if (is_hit_s_prefetch) new_coh <= coh_on_hit_s_prefetch;
+            else new_coh <= 0;
+          end else if (io_req_pri_val && io_req_pri_rdy) grant_had_data <= 0;
         end
       endcase
     end
@@ -342,7 +538,7 @@ module BoomMSHR (
         s_prefetch:
         if (io_req_sec_val && !io_req_sec_rdy || io_clear_prefetch) states <= s_invalid;
         else if (io_req_sec_val && io_req_sec_rdy)
-          if (is_hit) states <= s_meta_read;
+          if (is_hit_s_prefetch) states <= s_meta_read;
           else states <= s_refill_req;
         else if (io_req_pri_val && io_req_pri_rdy) states <= handle_pri_req(states);
       endcase

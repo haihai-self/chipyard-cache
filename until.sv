@@ -72,8 +72,8 @@ module BranchKillableQueue #(
     //流式队列 直接出队入队
     if (flow) begin
       if (io_empty) begin
-        do_deq = false;
-        if (io_deq.ready) do_enq = false;
+        do_deq = 0;
+        if (io_deq.ready) do_enq = 0;
       end
     end
 
@@ -122,7 +122,7 @@ module BranchKillableQueue #(
         valids[i] <= valids[i] && !isKilledbyBrcanch(io_brupdate, uops[i].br_mask) &&
             !(io_flush && flush_fn(uops[i]));
         // if valids是旧的值还是新的值？
-        if (valids[i]) uops[i].br_mask <= GetNewBrMask(i_brupdate, uops[i].br_mask);
+        if (valids[i]) uops[i].br_mask <= GetNewBrMask(io_brupdate, uops[i].br_mask);
       end
     end
 
