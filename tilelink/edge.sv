@@ -1,12 +1,53 @@
 package Edge;
 
 
-  import BundleParam::*;
   import HasL1CacheParameters::*;
-  function BundleST::TLBundleCST Release(
-      logic [sourceBits-1:0] fromSource, logic [addressBits-1:0] toAddress,
-      logic [sizeBits-1:0] lgSize, logic [cwidth-1:0] shrinkPermissions,
-      logic [dataBits-1:0] data, logic corrupt = 0);
+
+
+  //need to compile
+  function logic [BundleParam::dataBits/8-1:0] mask(
+      logic [BundleParam::addressBits-1:0] toAddress,
+      logic [BundleParam::sizeBits-1:0] lgsize);
+
+    return 0;
+  endfunction
+
+
+  function logic hasDataC(BundleST::TLBundleCST x);
+
+    return 0;
+  endfunction
+
+  //need to comp
+  function logic hasDataD(BundleST::TLBundleDST x);
+    logic opdata = x.opcode[0];
+
+    return opdata;
+  endfunction
+
+  function BundleST::TLBundleAST AcquireBlock(logic [BundleParam::sourceBits-1:0] fromSource,
+                                              logic [BundleParam::addressBits-1:0] toAddress,
+                                              logic [BundleParam::sizeBits-1:0] lgSize,
+                                              logic [BundleParam::param_size_a-1:0] growPermissions
+                                                  );
+    BundleST::TLBundleAST a;
+    a.opcode = TLMessages::AcquireBlock;
+    a.param = growPermissions;
+    a.size = lgSize;
+    a.source = fromSource;
+    a.address = toAddress;
+    a.mask = mask(toAddress, lgSize);
+    a.data = 0;
+    a.corrupt = 0;
+    return a;
+  endfunction
+
+  function BundleST::TLBundleCST Release(logic [BundleParam::sourceBits-1:0] fromSource,
+                                         logic [BundleParam::addressBits-1:0] toAddress,
+                                         logic [BundleParam::sizeBits-1:0] lgSize,
+                                         logic [BundleParam::cwidth-1:0] shrinkPermissions,
+                                         logic [BundleParam::dataBits-1:0] data,
+                                         logic corrupt = 0);
     BundleST::TLBundleCST c;
     c.opcode = TLMessages::Release;
     c.param = shrinkPermissions;
@@ -21,10 +62,12 @@ package Edge;
 
 
 
-  function BundleST::TLBundleCST ProbeAck(
-      logic [sourceBits-1:0] fromSource, logic [addressBits-1:0] toAddress,
-      logic [sizeBits-1:0] lgSize, logic [cwidth-1:0] reportPermissions,
-      logic [dataBits-1:0] data = 128'b0, logic corrupt = 0);
+  function BundleST::TLBundleCST ProbeAck(logic [BundleParam::sourceBits-1:0] fromSource,
+                                          logic [BundleParam::addressBits-1:0] toAddress,
+                                          logic [BundleParam::sizeBits-1:0] lgSize,
+                                          logic [BundleParam::cwidth-1:0] reportPermissions,
+                                          logic [BundleParam::dataBits-1:0] data = 128'b0,
+                                          logic corrupt = 0);
     BundleST::TLBundleCST c;
     c.opcode = TLMessages::ProbeAckData;
     c.param = reportPermissions;
@@ -37,7 +80,7 @@ package Edge;
   endfunction
 
   function BundleST::TLBundleCST ProbeAckST(BundleST::TLBundleBST b,
-                                            logic [cwidth-1:0] reportPermissions);
+                                            logic [BundleParam::cwidth-1:0] reportPermissions);
     return ProbeAck(
     .fromSource(b.source),
     .toAddress(b.address),
@@ -46,9 +89,18 @@ package Edge;
     );
   endfunction
 
-  function logic hasDataC(BundleST::TLBundleCST x);  //need to comp
+  function logic isRequestD(BundleST::TLBundleDST d);
+    return d.opcode[2] && !d.opcode[1];
+  endfunction
 
-    return 0;
+  function BundleST::TLBundleEST GrantAck(logic [BundleParam::sinkBits-1:0] tosink);
+    BundleST::TLBundleEST e;
+    e.sink = tosink;
+    return e;
+  endfunction
+
+  function BundleST::TLBundleEST GrantAckST(BundleST::TLBundleDST d);
+    return GrantAck(d.sink);
   endfunction
 
 endpackage

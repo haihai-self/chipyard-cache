@@ -40,12 +40,21 @@ package HasL1CacheParameters;
 endpackage
 
 package HasL1HellaCacheParameters;
-  parameter nMSHRs = 4;
   parameter cacheBlockBytes = L1CacheParams::blockBytes;
   parameter encRowBits = BundleParam::dataBits;
   parameter lgCacheBlockBytes = $clog2(cacheBlockBytes);
   parameter idxMSB = HasL1CacheParameters::untagBits - 1;
   parameter idxLSB = `blockOffBits;
+  parameter wordBits = `coreDataBits;
+  parameter wordBytes = wordBits/8;
+  parameter rowWords = HasL1CacheParameters::rowBits / wordBits;
 
+endpackage
+
+package DCacheParams;
+  parameter nSDQ = 17;
+  parameter nRPQ = 16;
+  parameter nMSHRs = 4;
+  parameter nMMIOs = 1;
 
 endpackage

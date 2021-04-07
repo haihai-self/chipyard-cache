@@ -41,7 +41,7 @@ module BoomWriteBackUnit (
   assign r_address = {req.tag, req.idx} << `blockOffBits;
 
   assign probeResponse = Edge::ProbeAck(
-  .fromSource(HasL1HellaCacheParameters::nMSHRs),
+  .fromSource(DCacheParams::nMSHRs),
   .toAddress(r_address),
   .lgSize(HasL1HellaCacheParameters::lgCacheBlockBytes),
   .reportPermissions(req.param),
@@ -49,7 +49,7 @@ module BoomWriteBackUnit (
   );
 
   assign voluntaryRelease = Edge::Release(
-  .fromSource(HasL1HellaCacheParameters::nMSHRs),
+  .fromSource(DCacheParams::nMSHRs),
   .toAddress(r_address),
   .lgSize(HasL1HellaCacheParameters::lgCacheBlockBytes),
   .shrinkPermissions(req.param),

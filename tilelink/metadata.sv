@@ -3,10 +3,6 @@ package MetaData;
   import MemoryOpConstants::*;
   import BundleParam::*;
 
-
-
-
-
   localparam False = 1'h0;
   localparam True = 1'h1;
 
@@ -61,12 +57,12 @@ package MetaData;
 
 
 
-  function BoomLSUST::onSecondaryAccessST onSecondaryAccess(logic [TLPermissions_width-1:0] state,
+  function TileLinkST::onSecondaryAccessST onSecondaryAccess(logic [TLPermissions_width-1:0] state,
                                                             logic [M_SZ-1 : 0] first_cmd,
                                                             logic [M_SZ-1:0] second_cmd);
     logic [2:0] r1;
     logic [2:0] r2;
-    BoomLSUST::onSecondaryAccessST result;
+    TileLinkST::onSecondaryAccessST result;
     r1 = growStarter(state, first_cmd);
     r2 = growStarter(state, second_cmd);
     result.needs_second_acq = isWriteIntent(second_cmd) && !isWriteIntent(first_cmd);

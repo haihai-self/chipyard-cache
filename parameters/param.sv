@@ -10,6 +10,7 @@
 `define enableBTBFastRepair 1
 `define enableRasTopRepair 1
 `define enableGHistStallRepair 1
+`define enablePrefetching 0
 `define useBPD 1
 `define vaddrBits 39
 `define usingCompressed 1       // wether use compressed instructions
@@ -34,6 +35,9 @@
 `define coreWidth `decodeWidth     
 `define numIntPhysRegisters 100  // *** can change in different Config *** 
 `define numFpPhysRegisters 96    // *** can change in different Config *** 
+`define coreDataBits 64
+`define coreDataBytes `coreDataBits/8
+
 
 
 // ICache

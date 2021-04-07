@@ -4,8 +4,7 @@ package BundleST;
 
   typedef struct packed {
     logic [2:0] opcode;
-    logic [(TLAtomics_width > awidth? TLAtomics_width :
-           awidth > TLHints_width? awidth : TLHints_width)-1:0] param;
+    logic [param_size_a-1:0] param;
     logic [sizeBits-1:0] size;
     logic [sourceBits-1:0] source;
     logic [addressBits-1:0] address;

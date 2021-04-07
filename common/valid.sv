@@ -9,3 +9,13 @@ interface ValidIF #(
   modport out(output valid, bits);
   modport in(input valid, bits);
 endinterface  //ValidIF
+
+interface ValidSTIF #(
+    type T
+);
+  logic valid;
+  T bits;
+
+  modport out(output valid, bits);
+  modport in(input valid, bits);
+endinterface  //ValidIF

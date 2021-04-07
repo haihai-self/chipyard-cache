@@ -75,7 +75,7 @@ module BoomProbeUnit (
   assign {is_dirty, report_param, new_coh} = MetaData::onProb(reply_coh, req.param);
 
 
-
+  //assign init && output 
   always_comb begin
     io_state.valid = states != s_invalid;
     io_state.bits = {8'b0, req.address};

@@ -14,4 +14,11 @@ package NBDcacheST;
     logic [HasL1CacheParameters::nWays-1 : 0] way_en;
     logic voluntary;
   } WriteBackReqST;
+
+  typedef struct packed {
+    logic [HasL1CacheParameters::nWays-1 : 0] way_en;
+    logic [HasL1CacheParameters::untagBits-1 : 0] addr;
+    logic [HasL1HellaCacheParameters::encRowBits-1:0] data;
+    logic [HasL1HellaCacheParameters::rowWords-1: 0] wmask;
+  } L1DataWriteReqST;
 endpackage
