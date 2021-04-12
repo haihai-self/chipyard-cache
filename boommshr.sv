@@ -24,19 +24,19 @@ module BoomMSHR (
     ValidIF.out     io_idx,  //bits_size= 
     ValidIF.out     io_way,  //bits_size= 
     ValidIF.out     io_tag,  //bits_size=
-    DecoupledIF.in  io_mem_acquire,  //TLBundleA
-    DecoupledIF.out io_mem_grant,  //TLBundleD
-    DecoupledIF.in  io_mem_finish,  //TLBundleE
     ValidIF.in      io_prober_state,  //bits_size=coreMaxAddrBits
-    DecoupledIF.in  io_refill,  //L1DataWriteReq
-    DecoupledIF.in  io_meta_write,  //L1MetaWriteReq
-    DecoupledIF.in  io_meta_read,  //L1MetaReadReq
-    ValidSTIF.in    io_meta_resp,  //L1Metadata
-    DecoupledIF.in  wb_req,  //WritebackReq
-    DecoupledIF.in  io_lb_read,  //LineBufferReadReq
-    DecoupledIF.in  io_lb_write,  //LineBufferWriteReq
-    DecoupledIF.in  io_replay,  //BoomDCacheReqInternal
-    DecoupledIF.in  io_resp  //BoomDCacheResp
+    ValidSTIF.in    io_meta_resp,  //L1MetadataST
+    DecoupledIF.in  io_mem_acquire,  //TLBundleAST
+    DecoupledIF.out io_mem_grant,  //TLBundleDST
+    DecoupledIF.in  io_mem_finish,  //TLBundleEST
+    DecoupledIF.in  io_refill,  //L1DataWriteReqST
+    DecoupledIF.in  io_meta_write,  //L1MetaWriteReqST
+    DecoupledIF.in  io_meta_read,  //L1MetaReadReqST
+    DecoupledIF.in  io_wb_req,  //WritebackReqST
+    DecoupledIF.in  io_lb_read,  //LineBufferReadReqST
+    DecoupledIF.in  io_lb_write,  //LineBufferWriteReqST
+    DecoupledIF.in  io_replay,  //BoomDCacheReqInternalST
+    DecoupledIF.in  io_resp  //BoomDCacheRespST
 );
 
   //signal io fire
