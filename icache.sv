@@ -308,6 +308,40 @@ module ICacheModule (
   endgenerate
 
   
+  generate
+    for (genvar i = 0; i < HasL1CacheParameters::nWays; i++) begin
+      SyncReadMem #(
+          .DEEPTH(HasL1CacheParameters::nSets * HasL1CacheParameters::refillCycles),
+          .DATA_WIDTH(wordBits),
+          .WMASK_WIDTH(1)
+      ) data_array0 (
+          .clk  (clock),
+          .wen  (refill_done),
+          .waddr(refill_idx),
+          .cs   (repl_way_1H),
+          .wdata(refill_tag_wdata),
 
+          .ren  (!refill_done && s0_valid),
+          .raddr(s0_vaddr[HasL1CacheParameters::untagBits - 1:`blockOffBits]),
+          .rdata(tag_rdata)
+      );
+      
+      SyncReadMem #(
+          .DEEPTH(HasL1CacheParameters::nSets * HasL1CacheParameters::refillCycles),
+          .DATA_WIDTH(wordBits),
+          .WMASK_WIDTH(1)
+      ) data_array0 (
+          .clk  (clock),
+          .wen  (refill_done),
+          .waddr(refill_idx),
+          .cs   (repl_way_1H),
+          .wdata(refill_tag_wdata),
+
+          .ren  (!refill_done && s0_valid),
+          .raddr(s0_vaddr[HasL1CacheParameters::untagBits - 1:`blockOffBits]),
+          .rdata(tag_rdata)
+      );
+    end
+  endgenerate
 
 endmodule
