@@ -1,31 +1,25 @@
 
 
 //connect to original module
-module ICache (  // @[chipyard.TestHarness.LargeBoomConfig.fir 176616:2]
-    input        clock,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176617:4]
-    input        reset,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176618:4]
-    input [31:0] io_s1_paddr,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-    input        io_s1_kill,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-    input        io_s2_kill,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-    input        io_invalidate,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-
-    output         io_resp_valid,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-    output [127:0] io_resp_bits_data,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-    output         io_req_ready,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-    input          io_req_valid,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-    input  [ 38:0] io_req_bits_addr,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-
-    input auto_master_out_a_ready,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-    output auto_master_out_a_valid,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-    output [31:0]
-        auto_master_out_a_bits_address,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-    input auto_master_out_d_valid,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-    input [2:0]
-        auto_master_out_d_bits_opcode,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-    input [3:0]
-        auto_master_out_d_bits_size,  // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-    input [127:0]
-        auto_master_out_d_bits_data  // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+module ICache( // @[chipyard.TestHarness.LargeBoomConfig.fir 176616:2]
+  input          clock, // @[chipyard.TestHarness.LargeBoomConfig.fir 176617:4]
+  input          reset, // @[chipyard.TestHarness.LargeBoomConfig.fir 176618:4]
+  input          auto_master_out_a_ready, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  output         auto_master_out_a_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  output [31:0]  auto_master_out_a_bits_address, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input          auto_master_out_d_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input  [2:0]   auto_master_out_d_bits_opcode, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input  [3:0]   auto_master_out_d_bits_size, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input  [127:0] auto_master_out_d_bits_data, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  output         io_req_ready, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input          io_req_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input  [38:0]  io_req_bits_addr, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input  [31:0]  io_s1_paddr, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input          io_s1_kill, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input          io_s2_kill, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  output         io_resp_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  output [127:0] io_resp_bits_data, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input          io_invalidate // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
 );
 
   ValidSTIF #(ICacheST::ICacheRespST) io_resp ();
@@ -151,37 +145,22 @@ module ICacheModule (
     // refill_one_beat = io_auto_d_fire && hasData(io_auto_d.bits);
   end
 
+  wire  refill_one_beat_opdata = auto_master_out_d_bits_opcode[0]; // @[Edges.scala 105:36 chipyard.TestHarness.LargeBoomConfig.fir 176665:4]
+  wire  refill_one_beat = auto_master_out_d_valid & refill_one_beat_opdata; // @[icache.scala 169:41 chipyard.TestHarness.LargeBoomConfig.fir 176666:4]
+  wire [26:0] _beats1_decode_T_1 = 27'hfff << auto_master_out_d_bits_size; // @[package.scala 234:77 chipyard.TestHarness.LargeBoomConfig.fir 176671:4]
+  wire [11:0] _beats1_decode_T_3 = ~_beats1_decode_T_1[11:0]; // @[package.scala 234:46 chipyard.TestHarness.LargeBoomConfig.fir 176673:4]
+  wire [7:0] beats1_decode = _beats1_decode_T_3[11:4]; // @[Edges.scala 219:59 chipyard.TestHarness.LargeBoomConfig.fir 176674:4]
+  wire [7:0] beats1 = refill_one_beat_opdata ? beats1_decode : 8'h0; // @[Edges.scala 220:14 chipyard.TestHarness.LargeBoomConfig.fir 176676:4]
+  reg [7:0] counter; // @[Edges.scala 228:27 chipyard.TestHarness.LargeBoomConfig.fir 176677:4]
+  wire [7:0] counter1 = counter - 8'h1; // @[Edges.scala 229:28 chipyard.TestHarness.LargeBoomConfig.fir 176679:4]
+  wire  first = counter == 8'h0; // @[Edges.scala 230:25 chipyard.TestHarness.LargeBoomConfig.fir 176680:4]
+  wire  _last_T = counter == 8'h1; // @[Edges.scala 231:25 chipyard.TestHarness.LargeBoomConfig.fir 176681:4]
+  wire  _last_T_1 = beats1 == 8'h0; // @[Edges.scala 231:47 chipyard.TestHarness.LargeBoomConfig.fir 176682:4]
+  wire  last = _last_T | _last_T_1; // @[Edges.scala 231:37 chipyard.TestHarness.LargeBoomConfig.fir 176683:4]
+  wire  d_done = last & auto_master_out_d_valid; // @[Edges.scala 232:22 chipyard.TestHarness.LargeBoomConfig.fir 176684:4]
+  wire [7:0] _count_T = ~counter1; // @[Edges.scala 233:27 chipyard.TestHarness.LargeBoomConfig.fir 176685:4]
+  wire [7:0] refill_cnt = beats1 & _count_T; // @[Edges.scala 233:25 chipyard.TestHarness.LargeBoomConfig.fir 176686:4]
 
-  // val (_, _, d_done, refill_cnt) = edge_out.count(tl_out.d) need to imps
-  wire refill_one_beat_opdata = io_auto_d.bits_opcode[0]
-      ;  // @[Edges.scala 105:36 chipyard.TestHarness.LargeBoomConfig.fir 176665:4]
-  wire refill_one_beat = io_auto_d.valid & refill_one_beat_opdata
-      ;  // @[icache.scala 169:41 chipyard.TestHarness.LargeBoomConfig.fir 176666:4]
-  wire [26:0] _beats1_decode_T_1 = 27'hfff << io_auto_d.bits_size
-      ;  // @[package.scala 234:77 chipyard.TestHarness.LargeBoomConfig.fir 176671:4]
-  wire [11:0] _beats1_decode_T_3 = ~_beats1_decode_T_1[11:0]
-      ;  // @[package.scala 234:46 chipyard.TestHarness.LargeBoomConfig.fir 176673:4]
-  wire [7:0] beats1_decode = _beats1_decode_T_3[11:4]
-      ;  // @[Edges.scala 219:59 chipyard.TestHarness.LargeBoomConfig.fir 176674:4]
-  wire [7:0] beats1 = refill_one_beat_opdata ? beats1_decode :
-      8'h0;  // @[Edges.scala 220:14 chipyard.TestHarness.LargeBoomConfig.fir 176676:4]
-  reg [7:0] counter;  // @[Edges.scala 228:27 chipyard.TestHarness.LargeBoomConfig.fir 176677:4]
-  wire [7:0] counter1 =
-      counter - 8'h1;  // @[Edges.scala 229:28 chipyard.TestHarness.LargeBoomConfig.fir 176679:4]
-  wire first =
-      counter == 8'h0;  // @[Edges.scala 230:25 chipyard.TestHarness.LargeBoomConfig.fir 176680:4]
-  wire _last_T =
-      counter == 8'h1;  // @[Edges.scala 231:25 chipyard.TestHarness.LargeBoomConfig.fir 176681:4]
-  wire _last_T_1 =
-      beats1 == 8'h0;  // @[Edges.scala 231:47 chipyard.TestHarness.LargeBoomConfig.fir 176682:4]
-  wire last = _last_T |
-      _last_T_1;  // @[Edges.scala 231:37 chipyard.TestHarness.LargeBoomConfig.fir 176683:4]
-  wire d_done = last &
-      io_auto_d.valid;  // @[Edges.scala 232:22 chipyard.TestHarness.LargeBoomConfig.fir 176684:4]
-  wire [7:0] _count_T =
-      ~counter1;  // @[Edges.scala 233:27 chipyard.TestHarness.LargeBoomConfig.fir 176685:4]
-  wire [7:0] refill_cnt =
-      beats1 & _count_T;  // @[Edges.scala 233:25 chipyard.TestHarness.LargeBoomConfig.fir 176686:4]
 
   always_ff @(posedge clock or posedge reset) begin
     if (reset) begin  // @[Edges.scala 228:27 chipyard.TestHarness.LargeBoomConfig.fir 176677:4]
@@ -205,42 +184,23 @@ module ICacheModule (
   assign io_req.ready = !refill_one_beat;
   assign refill_done = refill_one_beat && d_done;
   assign auto_d.ready = 1;
-
-
-
-  wire repl_way_prng_io_out_0
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_1
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_2
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_3
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_4
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_5
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_6
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_7
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_8
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_9
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_10
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_11
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_12
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_13
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_14
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire repl_way_prng_io_out_15
-      ;  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-
+  
+  wire  repl_way_prng_io_out_0; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_1; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_2; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_3; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_4; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_5; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_6; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_7; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_8; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_9; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_10; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_11; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_12; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_13; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_14; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_15;
 
   MaxPeriodFibonacciLFSR_1
       repl_way_prng (  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
