@@ -36,7 +36,7 @@ package HasL1CacheParameters;
   parameter cacheDataBits = 128;
   parameter cacheDataBytes = cacheDataBits / 8;
   parameter cacheDataBeats = (L1CacheParams::blockBytes * 8) / cacheDataBits;
-  parameter refillCycles = cacheDataBeats;
+  parameter refillCycles = cacheDataBeats;  //填写一个block需要多少cycles
 endpackage
 
 package HasL1HellaCacheParameters;

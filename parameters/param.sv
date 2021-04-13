@@ -22,7 +22,7 @@
 `define fetchWidth 8            // the number of instructions that fetches in IF 
 `define fetchBytes 16            // fetch bytes(8*2)
 // `define nInputs 1             // used in branchpredictor
-`define nBanks 2
+`define nBanks `fetchBytes<=8?1:2 //2
 `define bankBytes `fetchBytes/(`nBanks) 
 `define coreInstBits 16          // C instructions
 `define coreInstBytes `coreInstBits/8

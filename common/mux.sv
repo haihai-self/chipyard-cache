@@ -9,11 +9,11 @@ module Mux1Hlogic #(
     logic [width-1:0] out
 );
 
-  generate
-    for (genvar i = 0; i < n; i++) begin
-      assign out = select[i] == 1 ? in[i] : out;
+  always_comb begin
+    for (int i = 0; i < n; i++) begin
+      out = select[i] == 1 ? in[i] : out;
     end
-  endgenerate
+  end
 
 endmodule
 
@@ -29,10 +29,10 @@ module Mux1HST #(
     T out
 );
 
-  generate
-    for (genvar i = 0; i < n; i++) begin
-      assign out = select[i] == 1 ? in[i] : out;
+  always_comb begin
+    for (int i = 0; i < n; i++) begin
+      out = select[i] == 1 ? in[i] : out;
     end
-  endgenerate
+  end
 
 endmodule

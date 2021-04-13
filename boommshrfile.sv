@@ -56,12 +56,33 @@ module BoomMSHRFile (
   logic prefetcher_io_req_val;
   logic [`coreMaxAddrBits-1:0] prefetcher_io_req_addr;
   logic [BundleParam::TLPermissions_width-1:0] prefetcher_io_req_coh;
+  DecoupledIF #(BoomLSUST::BoomDCacheReqST) prefetcher_io_prefetch ();
 
 `ifdef enablePrefetching
-  NLPrefetcher prefetcher ();
+  NLPrefetcher prefetcher (
+      .clock        (clock),
+      .reset        (reset),
+      .io_mshr_avail(prefetcher_io_mshr_avail),
+      .io_req_val   (prefetcher_io_req_val),
+      .io_req_addr  (prefetcher_io_req_addr),
+      .io_req_coh   (prefetcher_io_req_coh),
+      .io_prefetch  (prefetcher_io_prefetch)
+  );
 `else
-  NullPrefetcher prefetcher ();
+  NullPrefetcher prefetcher (
+      .clock        (clock),
+      .reset        (reset),
+      .io_mshr_avail(prefetcher_io_mshr_avail),
+      .io_req_val   (prefetcher_io_req_val),
+      .io_req_addr  (prefetcher_io_req_addr),
+      .io_req_coh   (prefetcher_io_req_coh),
+      .io_prefetch  (prefetcher_io_prefetch)
+  );
 `endif
+
+  assign io_prefetch.valid = prefetcher_io_prefetch.valid;
+  assign io_prefetch.bits = prefetcher_io_prefetch.bits;
+  assign prefetcher_io_prefetch.ready = io_prefetch.ready;
 
 
 
@@ -94,12 +115,13 @@ module BoomMSHRFile (
   logic sdq_enq;
   logic [`coreDataBits-1:0] sdq[DCacheParams::nSDQ-1:0];
 
-  generate
-    for (genvar i = 0; i < DCacheParams::nSDQ - 1; i = i + 1) begin
-      assign sdq_alloc_id = ~sdq_val[i] == 1 ? i : sdq_alloc_id;
+  PriorityEncoderLow #(
+  .size(DCacheParams::nSDQ)
+  ) p1 (
+      .data_in (~sdq_val),
+      .data_out(sdq_alloc_id)
+  );
 
-    end
-  endgenerate
 
   assign sdq_rdy = ~(|sdq_val);
   assign sdq_enq = req_fire && cacheable && isWrite(req.uop.mem_cmd);
@@ -419,7 +441,7 @@ module BoomMSHRFile (
       assign mshr_io_id = i;
       assign mshr_io_req_pri_val = (i == mshr_alloc_idx) && pri_val;
       assign pri_rdy = i == mshr_alloc_idx ? mshr_io_req_pri_rdy : 0;
-      assign sec_rdy = (sec_rdy || (mshr_io_req_sec_rdy && mshr_io_req_sec_val))? 1: 0;
+      assign sec_rdy = (sec_rdy || (mshr_io_req_sec_rdy && mshr_io_req_sec_val)) ? 1 : 0;
 
       assign mshr_io_req_sec_val = req_valid && sdq_rdy && tag_match && idx_matches[i] && cacheable;
       assign mshr_io_req = req;
@@ -589,8 +611,8 @@ module BoomMSHRFile (
 
   logic respq_io_empty;
   logic [1:0] respq_io_count;
-  DecoupledIF #(.T(BoomLSUST::BoomDCacheRespST)) respq_enq();
-  DecoupledIF #(.T(BoomLSUST::BoomDCacheRespST)) respq_deq();
+  DecoupledIF #(.T(BoomLSUST::BoomDCacheRespST)) respq_enq ();
+  DecoupledIF #(.T(BoomLSUST::BoomDCacheRespST)) respq_deq ();
 
   assign respq_enq.valid = resp_arb_io_out_valid;
   assign respq_enq.bits = resp_arb_io_out;
@@ -614,11 +636,12 @@ module BoomMSHRFile (
 
       .io_brupdate(io_brupdate),
 
-      .io_enq     (respq_enq),
-      .io_deq     (respq_deq)
+      .io_enq(respq_enq),
+      .io_deq(respq_deq)
   );
 
-  assign io_req.ready = (!cacheable? mmio_rdy: sdq_rdy && (idx_match? tag_match && sec_rdy: pri_rdy));
+  assign io_req.ready = (
+      !cacheable ? mmio_rdy : sdq_rdy && (idx_match ? tag_match && sec_rdy : pri_rdy));
   assign io_secondary_miss = idx_match && way_match && !tag_match;
   assign io_block_hit = idx_match && tag_match;
 
@@ -630,7 +653,7 @@ module BoomMSHRFile (
   assign free_sdq = io_replay_fire && isWrite(io_replay.bits.uop.mem_cmd);
 
   always_comb begin
-    
+
     io_replay.valid = replay_arb_io_out_valid;
     io_replay.bits = replay_arb_io_out;
     replay_arb_io_out = io_replay.ready;
@@ -640,14 +663,12 @@ module BoomMSHRFile (
 
 
   always_ff @(posedge clock or posedge reset) begin
-    if (reset)
-      sdq_val = 0;
+    if (reset) sdq_val = 0;
     else begin
-      if (io_replay.valid || sdq_enq)
-        sdq_val = sdq_val & 1; //need to imp
+      if (io_replay.valid || sdq_enq) sdq_val = sdq_val & 1;  //need to imp
       //   sdq_val := sdq_val & ~(UIntToOH(replay_arb.io.out.bits.sdq_id) & Fill(cfg.nSDQ, free_sdq)) |
       // PriorityEncoderOH(~sdq_val(cfg.nSDQ-1,0)) & Fill(cfg.nSDQ, sdq_enq)
-  
+
     end
   end
 
