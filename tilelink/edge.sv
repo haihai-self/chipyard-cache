@@ -103,4 +103,19 @@ package Edge;
     return GrantAck(d.sink);
   endfunction
 
+  function BundleST::TLBundleAST Get(logic [BundleParam::sourceBits-1:0] fromSource,
+                                     logic [BundleParam::addressBits-1:0] toAddress,
+                                     logic [BundleParam::sizeBits-1:0] lgSize);
+    BundleST::TLBundleAST a;
+    a.opcode = TLMessages::Get;
+    a.param = 0;
+    a.size = lgSize;
+    a.source = fromSource;
+    a.address = toAddress;
+    a.mask = mask(toAddress, lgSize);
+    a.data = 0;
+    a.corrupt = 0;
+    return a;
+  endfunction
+
 endpackage

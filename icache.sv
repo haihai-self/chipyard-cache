@@ -71,6 +71,7 @@ module ICacheModule (
     input logic                  io_s2_kill,
     input logic                  io_invalidate,
     input logic                  io_s2_prefetch,
+    output logic io_perf_acquire,
 
     ValidSTIF.out   io_resp,  //ICacheResp
     DecoupledIF.out io_req,  //ICacheReq
@@ -80,12 +81,15 @@ module ICacheModule (
 
   localparam wordBits = `fetchBytes * 8;  //16*8
   localparam refillsToOneBank = `fetchBytes * 8 * 2 == wordBits;  //false
+  localparam enableICacheDelay = 0;
+
   localparam nSets = HasL1CacheParameters::nSets;
   localparam nWays = HasL1CacheParameters::nWays;
   localparam refillCycles = HasL1CacheParameters::refillCycles;
   localparam tagBits = HasL1CacheParameters::tagBits;
   localparam idxBits = HasL1CacheParameters::idxBits;
   localparam untagBits = HasL1CacheParameters::untagBits;
+  localparam lgCacheBlockBytes = HasL1HellaCacheParameters::lgCacheBlockBytes;
 
 
   localparam ramDepth = (refillsToOneBank && `nBanks == 2) ? nSets * refillCycles / 2 :
@@ -110,8 +114,8 @@ module ICacheModule (
   logic refill_valid_reg;
   logic refill_paddr;
   logic [HasL1CacheParameters::nSets * nWays-1:0] vb_array;
-  // logic [nWays-1:0][tagBits]
-  //     tag_array[HasL1CacheParameters::nSets];
+  logic s1_bankid;
+
 
   //wire
   logic s0_valid;
@@ -127,7 +131,6 @@ module ICacheModule (
   logic [$clog2(nWays)-1:0] repl_way;
   logic [tagBits] tag_rdata[nWays-1:0];
   logic [wordBits-1:0] s2_dout[nWays-1:0];
-  logic s1_bankid;
 
 
 
@@ -145,9 +148,11 @@ module ICacheModule (
     // refill_one_beat = io_auto_d_fire && hasData(io_auto_d.bits);
   end
 
-  wire  refill_one_beat_opdata = auto_master_out_d_bits_opcode[0]; // @[Edges.scala 105:36 chipyard.TestHarness.LargeBoomConfig.fir 176665:4]
-  wire  refill_one_beat = auto_master_out_d_valid & refill_one_beat_opdata; // @[icache.scala 169:41 chipyard.TestHarness.LargeBoomConfig.fir 176666:4]
-  wire [26:0] _beats1_decode_T_1 = 27'hfff << auto_master_out_d_bits_size; // @[package.scala 234:77 chipyard.TestHarness.LargeBoomConfig.fir 176671:4]
+
+  //assign val (_, _, d_done, refill_cnt) = edge_out.count(tl_out.d)
+  wire  refill_one_beat_opdata = io_auto_d.bits.opcode[0]; // @[Edges.scala 105:36 chipyard.TestHarness.LargeBoomConfig.fir 176665:4]
+  wire  refill_one_beat = io_auto_d.valid & refill_one_beat_opdata; // @[icache.scala 169:41 chipyard.TestHarness.LargeBoomConfig.fir 176666:4]
+  wire [26:0] _beats1_decode_T_1 = 27'hfff << io_auto_d.bits.size; // @[package.scala 234:77 chipyard.TestHarness.LargeBoomConfig.fir 176671:4]
   wire [11:0] _beats1_decode_T_3 = ~_beats1_decode_T_1[11:0]; // @[package.scala 234:46 chipyard.TestHarness.LargeBoomConfig.fir 176673:4]
   wire [7:0] beats1_decode = _beats1_decode_T_3[11:4]; // @[Edges.scala 219:59 chipyard.TestHarness.LargeBoomConfig.fir 176674:4]
   wire [7:0] beats1 = refill_one_beat_opdata ? beats1_decode : 8'h0; // @[Edges.scala 220:14 chipyard.TestHarness.LargeBoomConfig.fir 176676:4]
@@ -157,10 +162,9 @@ module ICacheModule (
   wire  _last_T = counter == 8'h1; // @[Edges.scala 231:25 chipyard.TestHarness.LargeBoomConfig.fir 176681:4]
   wire  _last_T_1 = beats1 == 8'h0; // @[Edges.scala 231:47 chipyard.TestHarness.LargeBoomConfig.fir 176682:4]
   wire  last = _last_T | _last_T_1; // @[Edges.scala 231:37 chipyard.TestHarness.LargeBoomConfig.fir 176683:4]
-  wire  d_done = last & auto_master_out_d_valid; // @[Edges.scala 232:22 chipyard.TestHarness.LargeBoomConfig.fir 176684:4]
+  wire  d_done = last & io_auto_d.valid; // @[Edges.scala 232:22 chipyard.TestHarness.LargeBoomConfig.fir 176684:4]
   wire [7:0] _count_T = ~counter1; // @[Edges.scala 233:27 chipyard.TestHarness.LargeBoomConfig.fir 176685:4]
   wire [7:0] refill_cnt = beats1 & _count_T; // @[Edges.scala 233:25 chipyard.TestHarness.LargeBoomConfig.fir 176686:4]
-
 
   always_ff @(posedge clock or posedge reset) begin
     if (reset) begin  // @[Edges.scala 228:27 chipyard.TestHarness.LargeBoomConfig.fir 176677:4]
@@ -181,10 +185,11 @@ module ICacheModule (
   end
 
 
-  assign io_req.ready = !refill_one_beat;
+
   assign refill_done = refill_one_beat && d_done;
-  assign auto_d.ready = 1;
   
+
+  //assign val repl_way = if (isDM) 0.U else LFSR(16, refill_fire)(log2Ceil(nWays)-1,0)
   wire  repl_way_prng_io_out_0; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
   wire  repl_way_prng_io_out_1; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
   wire  repl_way_prng_io_out_2; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
@@ -249,17 +254,17 @@ module ICacheModule (
 
   assign repl_way = HasL1CacheParameters::isDM ? 0 : _repl_way_T[$clog2(nWays) - 1:0];
 
+
+  //tag_array assign 
   logic [nWays-1:0] repl_way_1H;
   logic [tagBits-1:0] refill_tag_wdata[nWays-1:0];
 
-
-  always_comb begin
-    repl_way_1H = 0;
-    for (int i = 0; i < nWays; i++) begin
-      if (i == repl_way) repl_way_1H[i] = 1;
-      refill_tag_wdata[i] = refill_tag;
+  generate 
+    for (genvar i = 0; i < nWays; i++) begin
+      assign repl_way_1H[i] = repl_way == i? 1: 0;
+      assign refill_tag_wdata[i] = refill_tag ;
     end
-  end
+  endgenerate
 
   SyncReadMem #(
       .DEEPTH(HasL1CacheParameters::nSets),
@@ -385,4 +390,54 @@ module ICacheModule (
     end
   endgenerate
 
+
+  logic [nWays-1:0] s2_tag_hit;
+  logic s2_bankid;
+
+
+  always_ff @(posedge clock or posedge reset) begin
+    if (reset) begin
+      s2_tag_hit <= 0;
+      s2_bankid <= 0;
+
+    end else begin
+      s1_bankid <= s0_vaddr[$clog2(`bankBytes)];
+      s2_tag_hit <= s1_tag_hit;
+      s2_bankid <= s1_bankid;
+
+    end
+  end
+
+  logic [wordBits-1:0] s2_way_mux;
+  logic [wordBits/2 -1:0] s2_bank0_data;
+  logic [wordBits/2 -1:0] s2_bank1_data;
+  logic [wordBits-1:0] s2_data;
+
+
+  always_comb begin
+
+    for (int i = 0; i < nWays; i++) begin
+      s2_way_mux = s2_tag_hit[i] ? s2_dout[i] : s2_way_mux;
+    end
+    s2_bank0_data = s2_way_mux[wordBits / 2 - 1:0];
+    s2_bank1_data = s2_way_mux[wordBits - 1:wordBits / 2];
+
+    s2_data = s2_bankid ? {s2_bank0_data, s2_bank1_data} : {s2_bank1_data, s2_bank0_data};
+  end
+
+  always_comb begin
+    io_req.ready = !refill_one_beat;
+    io_auto_d.ready = 1;
+
+    io_resp.bits.data = s2_data;
+    io_resp.valid = s2_valid && s2_hit;
+
+    io_auto_a.valid = s2_miss && !refill_valid && io_s2_kill;
+    io_auto_a.bits = Get(
+    .fromSource(0),
+    .toAddress((refill_paddr >> `blockOffBits) << `blockOffBits),
+    .lgSize(lgCacheBlockBytes)
+    );
+    io_perf_acquire = io_auto_a_fire;
+  end
 endmodule

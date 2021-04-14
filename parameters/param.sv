@@ -23,7 +23,7 @@
 `define fetchBytes 16            // fetch bytes(8*2)
 // `define nInputs 1             // used in branchpredictor
 `define nBanks `fetchBytes<=8?1:2 //2
-`define bankBytes `fetchBytes/(`nBanks) 
+`define bankBytes `fetchBytes/(`nBanks)  //8
 `define coreInstBits 16          // C instructions
 `define coreInstBytes `coreInstBits/8
 // some parameter about cache
