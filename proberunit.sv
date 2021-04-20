@@ -10,12 +10,12 @@ module BoomProbeUnit (
     input        [BundleParam::TLPermissions_width-1:0] io_block_state,
 
     ValidIF.out     io_state,
-    DecoupledIF.in io_req,
-    DecoupledIF.out  io_rep,
-    DecoupledIF.out  io_meta_read,
-    DecoupledIF.out  io_meta_write,
-    DecoupledIF.out  io_wb_req,
-    DecoupledIF.out  io_lsu_release
+    DecoupledIF.in  io_req,
+    DecoupledIF.out io_rep,
+    DecoupledIF.out io_meta_read,
+    DecoupledIF.out io_meta_write,
+    DecoupledIF.out io_wb_req,
+    DecoupledIF.out io_lsu_release
 );
 
   //assign fire

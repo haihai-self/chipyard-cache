@@ -8,16 +8,16 @@ module BoomWriteBackUnit (
     input  logic                                               io_mem_grant,
     output logic                                               io_resp,  //encRowBits
 
-    ValidIF.out     io_idx,  //
+    ValidIF.out io_idx,  //
 
-    DecoupledIF.in io_req,  //WritebackReq
-    DecoupledIF.out  io_meta_read,  //L1MetaReadReq
-    DecoupledIF.out  io_data_req,  //L1DataReadReq
-    DecoupledIF.out  io_release,  //TLBundleC
-    DecoupledIF.out  io_lsu_release  //TLBundleC
+    DecoupledIF.in  io_req,  //WritebackReq
+    DecoupledIF.out io_meta_read,  //L1MetaReadReq
+    DecoupledIF.out io_data_req,  //L1DataReadReq
+    DecoupledIF.out io_release,  //TLBundleC
+    DecoupledIF.out io_lsu_release  //TLBundleC
 );
   localparam refillCycles = HasL1CacheParameters::refillCycles;
-  
+
 
   NBDcacheST::WriteBackReqST req;
   typedef enum {
@@ -161,8 +161,7 @@ module BoomWriteBackUnit (
           end
 
           if (r2_data_req_fired) begin
-            wb_buffer[r2_data_req_cnt] <=
-                io_data_resp;
+            wb_buffer[r2_data_req_cnt] <= io_data_resp;
             if (r2_data_req_cnt == refillCycles - 1) begin
               data_req_cnt <= 0;
             end
