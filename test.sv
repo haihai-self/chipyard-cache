@@ -3082,3 +3082,872 @@ end // initial
 `endif
 `endif // SYNTHESIS
 endmodule
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+module ICache( // @[chipyard.TestHarness.LargeBoomConfig.fir 176616:2]
+  input          clock, // @[chipyard.TestHarness.LargeBoomConfig.fir 176617:4]
+  input          reset, // @[chipyard.TestHarness.LargeBoomConfig.fir 176618:4]
+  input          auto_master_out_a_ready, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  output         auto_master_out_a_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  output [31:0]  auto_master_out_a_bits_address, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input          auto_master_out_d_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input  [2:0]   auto_master_out_d_bits_opcode, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input  [3:0]   auto_master_out_d_bits_size, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input  [127:0] auto_master_out_d_bits_data, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  output         io_req_ready, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input          io_req_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input  [38:0]  io_req_bits_addr, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input  [31:0]  io_s1_paddr, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input          io_s1_kill, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input          io_s2_kill, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  output         io_resp_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  output [127:0] io_resp_bits_data, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input          io_invalidate // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+);
+`ifdef RANDOMIZE_REG_INIT
+  reg [31:0] _RAND_0;
+  reg [511:0] _RAND_1;
+  reg [31:0] _RAND_2;
+  reg [31:0] _RAND_3;
+  reg [31:0] _RAND_4;
+  reg [31:0] _RAND_5;
+  reg [31:0] _RAND_6;
+  reg [31:0] _RAND_7;
+  reg [31:0] _RAND_8;
+  reg [31:0] _RAND_9;
+  reg [127:0] _RAND_10;
+  reg [127:0] _RAND_11;
+  reg [127:0] _RAND_12;
+  reg [127:0] _RAND_13;
+  reg [127:0] _RAND_14;
+  reg [127:0] _RAND_15;
+  reg [127:0] _RAND_16;
+  reg [127:0] _RAND_17;
+  reg [31:0] _RAND_18;
+  reg [31:0] _RAND_19;
+  reg [31:0] _RAND_20;
+  reg [31:0] _RAND_21;
+  reg [31:0] _RAND_22;
+  reg [31:0] _RAND_23;
+  reg [31:0] _RAND_24;
+  reg [31:0] _RAND_25;
+  reg [31:0] _RAND_26;
+`endif // RANDOMIZE_REG_INIT
+  wire  repl_way_prng_clock; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_reset; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_increment; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_0; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_1; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_2; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_3; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_4; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_5; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_6; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_7; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_8; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_9; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_10; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_11; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_12; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_13; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_14; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_15; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire [5:0] tag_array_RW0_addr; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire  tag_array_RW0_en; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire  tag_array_RW0_clk; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire  tag_array_RW0_wmode; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_wdata_0; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_wdata_1; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_wdata_2; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_wdata_3; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_wdata_4; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_wdata_5; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_wdata_6; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_wdata_7; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_rdata_0; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_rdata_1; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_rdata_2; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_rdata_3; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_rdata_4; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_rdata_5; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_rdata_6; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [19:0] tag_array_RW0_rdata_7; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire  tag_array_RW0_wmask_0; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire  tag_array_RW0_wmask_1; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire  tag_array_RW0_wmask_2; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire  tag_array_RW0_wmask_3; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire  tag_array_RW0_wmask_4; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire  tag_array_RW0_wmask_5; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire  tag_array_RW0_wmask_6; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire  tag_array_RW0_wmask_7; // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+  wire [7:0] dataArrayB0Way_0_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176893:4]
+  wire  dataArrayB0Way_0_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176893:4]
+  wire  dataArrayB0Way_0_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176893:4]
+  wire  dataArrayB0Way_0_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176893:4]
+  wire [63:0] dataArrayB0Way_0_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176893:4]
+  wire [63:0] dataArrayB0Way_0_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176893:4]
+  wire [7:0] dataArrayB0Way_1_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176894:4]
+  wire  dataArrayB0Way_1_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176894:4]
+  wire  dataArrayB0Way_1_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176894:4]
+  wire  dataArrayB0Way_1_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176894:4]
+  wire [63:0] dataArrayB0Way_1_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176894:4]
+  wire [63:0] dataArrayB0Way_1_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176894:4]
+  wire [7:0] dataArrayB0Way_2_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176895:4]
+  wire  dataArrayB0Way_2_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176895:4]
+  wire  dataArrayB0Way_2_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176895:4]
+  wire  dataArrayB0Way_2_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176895:4]
+  wire [63:0] dataArrayB0Way_2_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176895:4]
+  wire [63:0] dataArrayB0Way_2_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176895:4]
+  wire [7:0] dataArrayB0Way_3_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176896:4]
+  wire  dataArrayB0Way_3_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176896:4]
+  wire  dataArrayB0Way_3_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176896:4]
+  wire  dataArrayB0Way_3_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176896:4]
+  wire [63:0] dataArrayB0Way_3_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176896:4]
+  wire [63:0] dataArrayB0Way_3_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176896:4]
+  wire [7:0] dataArrayB0Way_4_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176897:4]
+  wire  dataArrayB0Way_4_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176897:4]
+  wire  dataArrayB0Way_4_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176897:4]
+  wire  dataArrayB0Way_4_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176897:4]
+  wire [63:0] dataArrayB0Way_4_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176897:4]
+  wire [63:0] dataArrayB0Way_4_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176897:4]
+  wire [7:0] dataArrayB0Way_5_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176898:4]
+  wire  dataArrayB0Way_5_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176898:4]
+  wire  dataArrayB0Way_5_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176898:4]
+  wire  dataArrayB0Way_5_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176898:4]
+  wire [63:0] dataArrayB0Way_5_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176898:4]
+  wire [63:0] dataArrayB0Way_5_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176898:4]
+  wire [7:0] dataArrayB0Way_6_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176899:4]
+  wire  dataArrayB0Way_6_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176899:4]
+  wire  dataArrayB0Way_6_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176899:4]
+  wire  dataArrayB0Way_6_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176899:4]
+  wire [63:0] dataArrayB0Way_6_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176899:4]
+  wire [63:0] dataArrayB0Way_6_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176899:4]
+  wire [7:0] dataArrayB0Way_7_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176900:4]
+  wire  dataArrayB0Way_7_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176900:4]
+  wire  dataArrayB0Way_7_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176900:4]
+  wire  dataArrayB0Way_7_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176900:4]
+  wire [63:0] dataArrayB0Way_7_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176900:4]
+  wire [63:0] dataArrayB0Way_7_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176900:4]
+  wire [7:0] dataArrayB1Way_0_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176901:4]
+  wire  dataArrayB1Way_0_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176901:4]
+  wire  dataArrayB1Way_0_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176901:4]
+  wire  dataArrayB1Way_0_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176901:4]
+  wire [63:0] dataArrayB1Way_0_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176901:4]
+  wire [63:0] dataArrayB1Way_0_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176901:4]
+  wire [7:0] dataArrayB1Way_1_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176902:4]
+  wire  dataArrayB1Way_1_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176902:4]
+  wire  dataArrayB1Way_1_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176902:4]
+  wire  dataArrayB1Way_1_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176902:4]
+  wire [63:0] dataArrayB1Way_1_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176902:4]
+  wire [63:0] dataArrayB1Way_1_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176902:4]
+  wire [7:0] dataArrayB1Way_2_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176903:4]
+  wire  dataArrayB1Way_2_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176903:4]
+  wire  dataArrayB1Way_2_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176903:4]
+  wire  dataArrayB1Way_2_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176903:4]
+  wire [63:0] dataArrayB1Way_2_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176903:4]
+  wire [63:0] dataArrayB1Way_2_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176903:4]
+  wire [7:0] dataArrayB1Way_3_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176904:4]
+  wire  dataArrayB1Way_3_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176904:4]
+  wire  dataArrayB1Way_3_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176904:4]
+  wire  dataArrayB1Way_3_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176904:4]
+  wire [63:0] dataArrayB1Way_3_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176904:4]
+  wire [63:0] dataArrayB1Way_3_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176904:4]
+  wire [7:0] dataArrayB1Way_4_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176905:4]
+  wire  dataArrayB1Way_4_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176905:4]
+  wire  dataArrayB1Way_4_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176905:4]
+  wire  dataArrayB1Way_4_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176905:4]
+  wire [63:0] dataArrayB1Way_4_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176905:4]
+  wire [63:0] dataArrayB1Way_4_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176905:4]
+  wire [7:0] dataArrayB1Way_5_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176906:4]
+  wire  dataArrayB1Way_5_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176906:4]
+  wire  dataArrayB1Way_5_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176906:4]
+  wire  dataArrayB1Way_5_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176906:4]
+  wire [63:0] dataArrayB1Way_5_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176906:4]
+  wire [63:0] dataArrayB1Way_5_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176906:4]
+  wire [7:0] dataArrayB1Way_6_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176907:4]
+  wire  dataArrayB1Way_6_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176907:4]
+  wire  dataArrayB1Way_6_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176907:4]
+  wire  dataArrayB1Way_6_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176907:4]
+  wire [63:0] dataArrayB1Way_6_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176907:4]
+  wire [63:0] dataArrayB1Way_6_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176907:4]
+  wire [7:0] dataArrayB1Way_7_RW0_addr; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176908:4]
+  wire  dataArrayB1Way_7_RW0_en; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176908:4]
+  wire  dataArrayB1Way_7_RW0_clk; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176908:4]
+  wire  dataArrayB1Way_7_RW0_wmode; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176908:4]
+  wire [63:0] dataArrayB1Way_7_RW0_wdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176908:4]
+  wire [63:0] dataArrayB1Way_7_RW0_rdata; // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176908:4]
+  wire  s0_valid = io_req_ready & io_req_valid; // @[Decoupled.scala 40:37 chipyard.TestHarness.LargeBoomConfig.fir 176629:4]
+  reg  s1_valid; // @[icache.scala 155:25 chipyard.TestHarness.LargeBoomConfig.fir 176630:4]
+  reg [511:0] vb_array; // @[icache.scala 186:25 chipyard.TestHarness.LargeBoomConfig.fir 176786:4]
+  wire [5:0] s1_idx = io_s1_paddr[11:6]; // @[icache.scala 200:29 chipyard.TestHarness.LargeBoomConfig.fir 176805:4]
+  wire [6:0] _s1_vb_T = {1'h0,s1_idx}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 176807:4]
+  wire [511:0] _s1_vb_T_1 = vb_array >> _s1_vb_T; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176808:4]
+  wire  s1_vb = _s1_vb_T_1[0]; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176809:4]
+  wire [19:0] s1_tag = io_s1_paddr[31:12]; // @[icache.scala 201:29 chipyard.TestHarness.LargeBoomConfig.fir 176806:4]
+  wire  _s1_tag_hit_0_T = tag_array_RW0_rdata_0 == s1_tag; // @[icache.scala 204:35 chipyard.TestHarness.LargeBoomConfig.fir 176810:4]
+  wire  s1_tag_hit_0 = s1_vb & _s1_tag_hit_0_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176811:4]
+  wire [6:0] _s1_vb_T_2 = {1'h1,s1_idx}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 176815:4]
+  wire [511:0] _s1_vb_T_3 = vb_array >> _s1_vb_T_2; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176816:4]
+  wire  s1_vb_1 = _s1_vb_T_3[0]; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176817:4]
+  wire  _s1_tag_hit_1_T = tag_array_RW0_rdata_1 == s1_tag; // @[icache.scala 204:35 chipyard.TestHarness.LargeBoomConfig.fir 176818:4]
+  wire  s1_tag_hit_1 = s1_vb_1 & _s1_tag_hit_1_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176819:4]
+  wire  _s1_hit_T = s1_tag_hit_0 | s1_tag_hit_1; // @[icache.scala 157:35 chipyard.TestHarness.LargeBoomConfig.fir 176633:4]
+  wire [7:0] _s1_vb_T_4 = {2'h2,s1_idx}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 176823:4]
+  wire [511:0] _s1_vb_T_5 = vb_array >> _s1_vb_T_4; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176824:4]
+  wire  s1_vb_2 = _s1_vb_T_5[0]; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176825:4]
+  wire  _s1_tag_hit_2_T = tag_array_RW0_rdata_2 == s1_tag; // @[icache.scala 204:35 chipyard.TestHarness.LargeBoomConfig.fir 176826:4]
+  wire  s1_tag_hit_2 = s1_vb_2 & _s1_tag_hit_2_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176827:4]
+  wire  _s1_hit_T_1 = _s1_hit_T | s1_tag_hit_2; // @[icache.scala 157:35 chipyard.TestHarness.LargeBoomConfig.fir 176634:4]
+  wire [7:0] _s1_vb_T_6 = {2'h3,s1_idx}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 176831:4]
+  wire [511:0] _s1_vb_T_7 = vb_array >> _s1_vb_T_6; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176832:4]
+  wire  s1_vb_3 = _s1_vb_T_7[0]; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176833:4]
+  wire  _s1_tag_hit_3_T = tag_array_RW0_rdata_3 == s1_tag; // @[icache.scala 204:35 chipyard.TestHarness.LargeBoomConfig.fir 176834:4]
+  wire  s1_tag_hit_3 = s1_vb_3 & _s1_tag_hit_3_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176835:4]
+  wire  _s1_hit_T_2 = _s1_hit_T_1 | s1_tag_hit_3; // @[icache.scala 157:35 chipyard.TestHarness.LargeBoomConfig.fir 176635:4]
+  wire [8:0] _s1_vb_T_8 = {3'h4,s1_idx}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 176839:4]
+  wire [511:0] _s1_vb_T_9 = vb_array >> _s1_vb_T_8; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176840:4]
+  wire  s1_vb_4 = _s1_vb_T_9[0]; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176841:4]
+  wire  _s1_tag_hit_4_T = tag_array_RW0_rdata_4 == s1_tag; // @[icache.scala 204:35 chipyard.TestHarness.LargeBoomConfig.fir 176842:4]
+  wire  s1_tag_hit_4 = s1_vb_4 & _s1_tag_hit_4_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176843:4]
+  wire  _s1_hit_T_3 = _s1_hit_T_2 | s1_tag_hit_4; // @[icache.scala 157:35 chipyard.TestHarness.LargeBoomConfig.fir 176636:4]
+  wire [8:0] _s1_vb_T_10 = {3'h5,s1_idx}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 176847:4]
+  wire [511:0] _s1_vb_T_11 = vb_array >> _s1_vb_T_10; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176848:4]
+  wire  s1_vb_5 = _s1_vb_T_11[0]; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176849:4]
+  wire  _s1_tag_hit_5_T = tag_array_RW0_rdata_5 == s1_tag; // @[icache.scala 204:35 chipyard.TestHarness.LargeBoomConfig.fir 176850:4]
+  wire  s1_tag_hit_5 = s1_vb_5 & _s1_tag_hit_5_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176851:4]
+  wire  _s1_hit_T_4 = _s1_hit_T_3 | s1_tag_hit_5; // @[icache.scala 157:35 chipyard.TestHarness.LargeBoomConfig.fir 176637:4]
+  wire [8:0] _s1_vb_T_12 = {3'h6,s1_idx}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 176855:4]
+  wire [511:0] _s1_vb_T_13 = vb_array >> _s1_vb_T_12; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176856:4]
+  wire  s1_vb_6 = _s1_vb_T_13[0]; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176857:4]
+  wire  _s1_tag_hit_6_T = tag_array_RW0_rdata_6 == s1_tag; // @[icache.scala 204:35 chipyard.TestHarness.LargeBoomConfig.fir 176858:4]
+  wire  s1_tag_hit_6 = s1_vb_6 & _s1_tag_hit_6_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176859:4]
+  wire  _s1_hit_T_5 = _s1_hit_T_4 | s1_tag_hit_6; // @[icache.scala 157:35 chipyard.TestHarness.LargeBoomConfig.fir 176638:4]
+  wire [8:0] _s1_vb_T_14 = {3'h7,s1_idx}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 176863:4]
+  wire [511:0] _s1_vb_T_15 = vb_array >> _s1_vb_T_14; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176864:4]
+  wire  s1_vb_7 = _s1_vb_T_15[0]; // @[icache.scala 202:25 chipyard.TestHarness.LargeBoomConfig.fir 176865:4]
+  wire  _s1_tag_hit_7_T = tag_array_RW0_rdata_7 == s1_tag; // @[icache.scala 204:35 chipyard.TestHarness.LargeBoomConfig.fir 176866:4]
+  wire  s1_tag_hit_7 = s1_vb_7 & _s1_tag_hit_7_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176867:4]
+  wire  _s2_valid_T = ~io_s1_kill; // @[icache.scala 158:38 chipyard.TestHarness.LargeBoomConfig.fir 176640:4]
+  reg  s2_valid; // @[icache.scala 158:25 chipyard.TestHarness.LargeBoomConfig.fir 176642:4]
+  reg  s2_hit; // @[icache.scala 159:23 chipyard.TestHarness.LargeBoomConfig.fir 176644:4]
+  reg  invalidated; // @[icache.scala 162:24 chipyard.TestHarness.LargeBoomConfig.fir 176646:4]
+  reg  refill_valid; // @[icache.scala 163:29 chipyard.TestHarness.LargeBoomConfig.fir 176647:4]
+  wire  _s2_miss_T = ~s2_hit; // @[icache.scala 165:29 chipyard.TestHarness.LargeBoomConfig.fir 176649:4]
+  wire  _s2_miss_T_1 = s2_valid & _s2_miss_T; // @[icache.scala 165:26 chipyard.TestHarness.LargeBoomConfig.fir 176650:4]
+  reg  s2_miss_REG; // @[icache.scala 165:48 chipyard.TestHarness.LargeBoomConfig.fir 176651:4]
+  wire  _s2_miss_T_2 = ~s2_miss_REG; // @[icache.scala 165:40 chipyard.TestHarness.LargeBoomConfig.fir 176653:4]
+  wire  s2_miss = _s2_miss_T_1 & _s2_miss_T_2; // @[icache.scala 165:37 chipyard.TestHarness.LargeBoomConfig.fir 176654:4]
+  wire  _bundleOut_0_a_valid_T = ~refill_valid; // @[icache.scala 351:32 chipyard.TestHarness.LargeBoomConfig.fir 177343:4]
+  wire  _bundleOut_0_a_valid_T_1 = s2_miss & _bundleOut_0_a_valid_T; // @[icache.scala 351:29 chipyard.TestHarness.LargeBoomConfig.fir 177344:4]
+  wire  _bundleOut_0_a_valid_T_2 = ~io_s2_kill; // @[icache.scala 351:49 chipyard.TestHarness.LargeBoomConfig.fir 177345:4]
+  wire  tl_out_a_valid = _bundleOut_0_a_valid_T_1 & _bundleOut_0_a_valid_T_2; // @[icache.scala 351:46 chipyard.TestHarness.LargeBoomConfig.fir 177346:4]
+  wire  refill_fire = auto_master_out_a_ready & tl_out_a_valid; // @[Decoupled.scala 40:37 chipyard.TestHarness.LargeBoomConfig.fir 176648:4]
+  wire  _refill_paddr_T = refill_valid | s2_miss; // @[icache.scala 166:72 chipyard.TestHarness.LargeBoomConfig.fir 176655:4]
+  wire  _refill_paddr_T_1 = ~_refill_paddr_T; // @[icache.scala 166:57 chipyard.TestHarness.LargeBoomConfig.fir 176656:4]
+  wire  _refill_paddr_T_2 = s1_valid & _refill_paddr_T_1; // @[icache.scala 166:54 chipyard.TestHarness.LargeBoomConfig.fir 176657:4]
+  reg [31:0] refill_paddr; // @[Reg.scala 15:16 chipyard.TestHarness.LargeBoomConfig.fir 176658:4]
+  wire [5:0] refill_idx = refill_paddr[11:6]; // @[icache.scala 168:32 chipyard.TestHarness.LargeBoomConfig.fir 176663:4]
+  wire  refill_one_beat_opdata = auto_master_out_d_bits_opcode[0]; // @[Edges.scala 105:36 chipyard.TestHarness.LargeBoomConfig.fir 176665:4]
+  wire  refill_one_beat = auto_master_out_d_valid & refill_one_beat_opdata; // @[icache.scala 169:41 chipyard.TestHarness.LargeBoomConfig.fir 176666:4]
+  wire [26:0] _beats1_decode_T_1 = 27'hfff << auto_master_out_d_bits_size; // @[package.scala 234:77 chipyard.TestHarness.LargeBoomConfig.fir 176671:4]
+  wire [11:0] _beats1_decode_T_3 = ~_beats1_decode_T_1[11:0]; // @[package.scala 234:46 chipyard.TestHarness.LargeBoomConfig.fir 176673:4]
+  wire [7:0] beats1_decode = _beats1_decode_T_3[11:4]; // @[Edges.scala 219:59 chipyard.TestHarness.LargeBoomConfig.fir 176674:4]
+  wire [7:0] beats1 = refill_one_beat_opdata ? beats1_decode : 8'h0; // @[Edges.scala 220:14 chipyard.TestHarness.LargeBoomConfig.fir 176676:4]
+  reg [7:0] counter; // @[Edges.scala 228:27 chipyard.TestHarness.LargeBoomConfig.fir 176677:4]
+  wire [7:0] counter1 = counter - 8'h1; // @[Edges.scala 229:28 chipyard.TestHarness.LargeBoomConfig.fir 176679:4]
+  wire  first = counter == 8'h0; // @[Edges.scala 230:25 chipyard.TestHarness.LargeBoomConfig.fir 176680:4]
+  wire  _last_T = counter == 8'h1; // @[Edges.scala 231:25 chipyard.TestHarness.LargeBoomConfig.fir 176681:4]
+  wire  _last_T_1 = beats1 == 8'h0; // @[Edges.scala 231:47 chipyard.TestHarness.LargeBoomConfig.fir 176682:4]
+  wire  last = _last_T | _last_T_1; // @[Edges.scala 231:37 chipyard.TestHarness.LargeBoomConfig.fir 176683:4]
+  wire  d_done = last & auto_master_out_d_valid; // @[Edges.scala 232:22 chipyard.TestHarness.LargeBoomConfig.fir 176684:4]
+  wire [7:0] _count_T = ~counter1; // @[Edges.scala 233:27 chipyard.TestHarness.LargeBoomConfig.fir 176685:4]
+  wire [7:0] refill_cnt = beats1 & _count_T; // @[Edges.scala 233:25 chipyard.TestHarness.LargeBoomConfig.fir 176686:4]
+  wire  refill_done = refill_one_beat & d_done; // @[icache.scala 174:37 chipyard.TestHarness.LargeBoomConfig.fir 176691:4]
+  wire [7:0] repl_way_lo = {repl_way_prng_io_out_7,repl_way_prng_io_out_6,repl_way_prng_io_out_5,repl_way_prng_io_out_4,
+    repl_way_prng_io_out_3,repl_way_prng_io_out_2,repl_way_prng_io_out_1,repl_way_prng_io_out_0}; // @[PRNG.scala 86:17 chipyard.TestHarness.LargeBoomConfig.fir 176720:4]
+  wire [15:0] _repl_way_T = {repl_way_prng_io_out_15,repl_way_prng_io_out_14,repl_way_prng_io_out_13,
+    repl_way_prng_io_out_12,repl_way_prng_io_out_11,repl_way_prng_io_out_10,repl_way_prng_io_out_9,
+    repl_way_prng_io_out_8,repl_way_lo}; // @[PRNG.scala 86:17 chipyard.TestHarness.LargeBoomConfig.fir 176728:4]
+  wire [2:0] repl_way = _repl_way_T[2:0]; // @[icache.scala 178:58 chipyard.TestHarness.LargeBoomConfig.fir 176729:4]
+  wire  _tag_rdata_T_1 = ~refill_done; // @[icache.scala 181:71 chipyard.TestHarness.LargeBoomConfig.fir 176732:4]
+  wire  _tag_rdata_T_2 = _tag_rdata_T_1 & s0_valid; // @[icache.scala 181:84 chipyard.TestHarness.LargeBoomConfig.fir 176733:4]
+  wire  _T_1 = repl_way == 3'h0; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176752:6]
+  wire  _T_2 = repl_way == 3'h1; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176753:6]
+  wire  _T_3 = repl_way == 3'h2; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176754:6]
+  wire  _T_4 = repl_way == 3'h3; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176755:6]
+  wire  _T_5 = repl_way == 3'h4; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176756:6]
+  wire  _T_6 = repl_way == 3'h5; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176757:6]
+  wire  _T_7 = repl_way == 3'h6; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176758:6]
+  wire  _T_8 = repl_way == 3'h7; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176759:6]
+  wire [8:0] _vb_array_T = {repl_way,refill_idx}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 176788:6]
+  wire  _vb_array_T_1 = ~invalidated; // @[icache.scala 188:75 chipyard.TestHarness.LargeBoomConfig.fir 176789:6]
+  wire  _vb_array_T_2 = refill_done & _vb_array_T_1; // @[icache.scala 188:72 chipyard.TestHarness.LargeBoomConfig.fir 176790:6]
+  wire [511:0] _vb_array_T_3 = 512'h1 << _vb_array_T; // @[icache.scala 188:32 chipyard.TestHarness.LargeBoomConfig.fir 176791:6]
+  wire [511:0] _vb_array_T_4 = vb_array | _vb_array_T_3; // @[icache.scala 188:32 chipyard.TestHarness.LargeBoomConfig.fir 176792:6]
+  wire [511:0] _vb_array_T_5 = ~vb_array; // @[icache.scala 188:32 chipyard.TestHarness.LargeBoomConfig.fir 176793:6]
+  wire [511:0] _vb_array_T_6 = _vb_array_T_5 | _vb_array_T_3; // @[icache.scala 188:32 chipyard.TestHarness.LargeBoomConfig.fir 176794:6]
+  wire [511:0] _vb_array_T_7 = ~_vb_array_T_6; // @[icache.scala 188:32 chipyard.TestHarness.LargeBoomConfig.fir 176795:6]
+  wire  _GEN_43 = io_invalidate | invalidated; // @[icache.scala 191:24 chipyard.TestHarness.LargeBoomConfig.fir 176799:4 icache.scala 193:17 chipyard.TestHarness.LargeBoomConfig.fir 176801:6 icache.scala 162:24 chipyard.TestHarness.LargeBoomConfig.fir 176646:4]
+  wire [1:0] _T_9 = s1_tag_hit_0 + s1_tag_hit_1; // @[Bitwise.scala 47:55 chipyard.TestHarness.LargeBoomConfig.fir 176869:4]
+  wire [1:0] _T_11 = s1_tag_hit_2 + s1_tag_hit_3; // @[Bitwise.scala 47:55 chipyard.TestHarness.LargeBoomConfig.fir 176871:4]
+  wire [2:0] _T_13 = _T_9 + _T_11; // @[Bitwise.scala 47:55 chipyard.TestHarness.LargeBoomConfig.fir 176873:4]
+  wire [1:0] _T_15 = s1_tag_hit_4 + s1_tag_hit_5; // @[Bitwise.scala 47:55 chipyard.TestHarness.LargeBoomConfig.fir 176875:4]
+  wire [1:0] _T_17 = s1_tag_hit_6 + s1_tag_hit_7; // @[Bitwise.scala 47:55 chipyard.TestHarness.LargeBoomConfig.fir 176877:4]
+  wire [2:0] _T_19 = _T_15 + _T_17; // @[Bitwise.scala 47:55 chipyard.TestHarness.LargeBoomConfig.fir 176879:4]
+  wire [3:0] _T_21 = _T_13 + _T_19; // @[Bitwise.scala 47:55 chipyard.TestHarness.LargeBoomConfig.fir 176881:4]
+  wire  _T_23 = _T_21 <= 4'h1; // @[icache.scala 206:31 chipyard.TestHarness.LargeBoomConfig.fir 176883:4]
+  wire  _T_24 = ~s1_valid; // @[icache.scala 206:41 chipyard.TestHarness.LargeBoomConfig.fir 176884:4]
+  wire  _T_25 = _T_23 | _T_24; // @[icache.scala 206:38 chipyard.TestHarness.LargeBoomConfig.fir 176885:4]
+  wire  _T_27 = _T_25 | reset; // @[icache.scala 206:9 chipyard.TestHarness.LargeBoomConfig.fir 176887:4]
+  wire  _T_28 = ~_T_27; // @[icache.scala 206:9 chipyard.TestHarness.LargeBoomConfig.fir 176888:4]
+  reg  s1_bankid_REG; // @[icache.scala 281:25 chipyard.TestHarness.LargeBoomConfig.fir 176910:4]
+  wire  _wen_T_1 = refill_one_beat & _vb_array_T_1; // @[icache.scala 285:34 chipyard.TestHarness.LargeBoomConfig.fir 176914:4]
+  wire  wen = _wen_T_1 & _T_1; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 176916:4]
+  wire [7:0] _T_29 = {refill_idx, 2'h0}; // @[icache.scala 308:44 chipyard.TestHarness.LargeBoomConfig.fir 176917:4]
+  wire [7:0] _T_30 = _T_29 | refill_cnt; // @[icache.scala 308:71 chipyard.TestHarness.LargeBoomConfig.fir 176918:4]
+  wire [7:0] _GEN_167 = {{7'd0}, io_req_bits_addr[3]}; // @[icache.scala 271:64 chipyard.TestHarness.LargeBoomConfig.fir 176921:4]
+  wire [7:0] _T_34 = io_req_bits_addr[11:4] + _GEN_167; // @[icache.scala 271:64 chipyard.TestHarness.LargeBoomConfig.fir 176922:4]
+  wire  _s2_dout_0_T = ~wen; // @[icache.scala 324:66 chipyard.TestHarness.LargeBoomConfig.fir 176936:4]
+  wire  _s2_dout_0_T_1 = _s2_dout_0_T & s0_valid; // @[icache.scala 324:71 chipyard.TestHarness.LargeBoomConfig.fir 176937:4]
+  reg [127:0] s2_dout_0_REG; // @[icache.scala 324:30 chipyard.TestHarness.LargeBoomConfig.fir 176957:4]
+  wire  wen_1 = _wen_T_1 & _T_2; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 176963:4]
+  wire  _s2_dout_1_T = ~wen_1; // @[icache.scala 324:66 chipyard.TestHarness.LargeBoomConfig.fir 176983:4]
+  wire  _s2_dout_1_T_1 = _s2_dout_1_T & s0_valid; // @[icache.scala 324:71 chipyard.TestHarness.LargeBoomConfig.fir 176984:4]
+  reg [127:0] s2_dout_1_REG; // @[icache.scala 324:30 chipyard.TestHarness.LargeBoomConfig.fir 177004:4]
+  wire  wen_2 = _wen_T_1 & _T_3; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177010:4]
+  wire  _s2_dout_2_T = ~wen_2; // @[icache.scala 324:66 chipyard.TestHarness.LargeBoomConfig.fir 177030:4]
+  wire  _s2_dout_2_T_1 = _s2_dout_2_T & s0_valid; // @[icache.scala 324:71 chipyard.TestHarness.LargeBoomConfig.fir 177031:4]
+  reg [127:0] s2_dout_2_REG; // @[icache.scala 324:30 chipyard.TestHarness.LargeBoomConfig.fir 177051:4]
+  wire  wen_3 = _wen_T_1 & _T_4; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177057:4]
+  wire  _s2_dout_3_T = ~wen_3; // @[icache.scala 324:66 chipyard.TestHarness.LargeBoomConfig.fir 177077:4]
+  wire  _s2_dout_3_T_1 = _s2_dout_3_T & s0_valid; // @[icache.scala 324:71 chipyard.TestHarness.LargeBoomConfig.fir 177078:4]
+  reg [127:0] s2_dout_3_REG; // @[icache.scala 324:30 chipyard.TestHarness.LargeBoomConfig.fir 177098:4]
+  wire  wen_4 = _wen_T_1 & _T_5; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177104:4]
+  wire  _s2_dout_4_T = ~wen_4; // @[icache.scala 324:66 chipyard.TestHarness.LargeBoomConfig.fir 177124:4]
+  wire  _s2_dout_4_T_1 = _s2_dout_4_T & s0_valid; // @[icache.scala 324:71 chipyard.TestHarness.LargeBoomConfig.fir 177125:4]
+  reg [127:0] s2_dout_4_REG; // @[icache.scala 324:30 chipyard.TestHarness.LargeBoomConfig.fir 177145:4]
+  wire  wen_5 = _wen_T_1 & _T_6; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177151:4]
+  wire  _s2_dout_5_T = ~wen_5; // @[icache.scala 324:66 chipyard.TestHarness.LargeBoomConfig.fir 177171:4]
+  wire  _s2_dout_5_T_1 = _s2_dout_5_T & s0_valid; // @[icache.scala 324:71 chipyard.TestHarness.LargeBoomConfig.fir 177172:4]
+  reg [127:0] s2_dout_5_REG; // @[icache.scala 324:30 chipyard.TestHarness.LargeBoomConfig.fir 177192:4]
+  wire  wen_6 = _wen_T_1 & _T_7; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177198:4]
+  wire  _s2_dout_6_T = ~wen_6; // @[icache.scala 324:66 chipyard.TestHarness.LargeBoomConfig.fir 177218:4]
+  wire  _s2_dout_6_T_1 = _s2_dout_6_T & s0_valid; // @[icache.scala 324:71 chipyard.TestHarness.LargeBoomConfig.fir 177219:4]
+  reg [127:0] s2_dout_6_REG; // @[icache.scala 324:30 chipyard.TestHarness.LargeBoomConfig.fir 177239:4]
+  wire  wen_7 = _wen_T_1 & _T_8; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177245:4]
+  wire  _s2_dout_7_T = ~wen_7; // @[icache.scala 324:66 chipyard.TestHarness.LargeBoomConfig.fir 177265:4]
+  wire  _s2_dout_7_T_1 = _s2_dout_7_T & s0_valid; // @[icache.scala 324:71 chipyard.TestHarness.LargeBoomConfig.fir 177266:4]
+  reg [127:0] s2_dout_7_REG; // @[icache.scala 324:30 chipyard.TestHarness.LargeBoomConfig.fir 177286:4]
+  reg  s2_tag_hit_0; // @[icache.scala 329:27 chipyard.TestHarness.LargeBoomConfig.fir 177289:4]
+  reg  s2_tag_hit_1; // @[icache.scala 329:27 chipyard.TestHarness.LargeBoomConfig.fir 177289:4]
+  reg  s2_tag_hit_2; // @[icache.scala 329:27 chipyard.TestHarness.LargeBoomConfig.fir 177289:4]
+  reg  s2_tag_hit_3; // @[icache.scala 329:27 chipyard.TestHarness.LargeBoomConfig.fir 177289:4]
+  reg  s2_tag_hit_4; // @[icache.scala 329:27 chipyard.TestHarness.LargeBoomConfig.fir 177289:4]
+  reg  s2_tag_hit_5; // @[icache.scala 329:27 chipyard.TestHarness.LargeBoomConfig.fir 177289:4]
+  reg  s2_tag_hit_6; // @[icache.scala 329:27 chipyard.TestHarness.LargeBoomConfig.fir 177289:4]
+  reg  s2_tag_hit_7; // @[icache.scala 329:27 chipyard.TestHarness.LargeBoomConfig.fir 177289:4]
+  reg  s2_bankid; // @[icache.scala 331:26 chipyard.TestHarness.LargeBoomConfig.fir 177316:4]
+  wire [127:0] _s2_way_mux_T = s2_tag_hit_0 ? s2_dout_0_REG : 128'h0; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177318:4]
+  wire [127:0] _s2_way_mux_T_1 = s2_tag_hit_1 ? s2_dout_1_REG : 128'h0; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177319:4]
+  wire [127:0] _s2_way_mux_T_2 = s2_tag_hit_2 ? s2_dout_2_REG : 128'h0; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177320:4]
+  wire [127:0] _s2_way_mux_T_3 = s2_tag_hit_3 ? s2_dout_3_REG : 128'h0; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177321:4]
+  wire [127:0] _s2_way_mux_T_4 = s2_tag_hit_4 ? s2_dout_4_REG : 128'h0; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177322:4]
+  wire [127:0] _s2_way_mux_T_5 = s2_tag_hit_5 ? s2_dout_5_REG : 128'h0; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177323:4]
+  wire [127:0] _s2_way_mux_T_6 = s2_tag_hit_6 ? s2_dout_6_REG : 128'h0; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177324:4]
+  wire [127:0] _s2_way_mux_T_7 = s2_tag_hit_7 ? s2_dout_7_REG : 128'h0; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177325:4]
+  wire [127:0] _s2_way_mux_T_8 = _s2_way_mux_T | _s2_way_mux_T_1; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177326:4]
+  wire [127:0] _s2_way_mux_T_9 = _s2_way_mux_T_8 | _s2_way_mux_T_2; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177327:4]
+  wire [127:0] _s2_way_mux_T_10 = _s2_way_mux_T_9 | _s2_way_mux_T_3; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177328:4]
+  wire [127:0] _s2_way_mux_T_11 = _s2_way_mux_T_10 | _s2_way_mux_T_4; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177329:4]
+  wire [127:0] _s2_way_mux_T_12 = _s2_way_mux_T_11 | _s2_way_mux_T_5; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177330:4]
+  wire [127:0] _s2_way_mux_T_13 = _s2_way_mux_T_12 | _s2_way_mux_T_6; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177331:4]
+  wire [127:0] s2_way_mux = _s2_way_mux_T_13 | _s2_way_mux_T_7; // @[Mux.scala 27:72 chipyard.TestHarness.LargeBoomConfig.fir 177332:4]
+  wire [63:0] s2_bank0_data = s2_way_mux[63:0]; // @[icache.scala 336:33 chipyard.TestHarness.LargeBoomConfig.fir 177335:4]
+  wire [63:0] s2_bank1_data = s2_way_mux[127:64]; // @[icache.scala 337:33 chipyard.TestHarness.LargeBoomConfig.fir 177336:4]
+  wire [127:0] _s2_data_T = {s2_bank0_data,s2_bank1_data}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 177337:4]
+  wire [127:0] _s2_data_T_1 = {s2_bank1_data,s2_bank0_data}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 177338:4]
+  wire  _GEN_165 = refill_fire | refill_valid; // @[icache.scala 363:22 chipyard.TestHarness.LargeBoomConfig.fir 177564:4 icache.scala 363:37 chipyard.TestHarness.LargeBoomConfig.fir 177565:6 icache.scala 163:29 chipyard.TestHarness.LargeBoomConfig.fir 176647:4]
+  MaxPeriodFibonacciLFSR_1 repl_way_prng ( // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+    .clock(repl_way_prng_clock),
+    .reset(repl_way_prng_reset),
+    .io_increment(repl_way_prng_io_increment),
+    .io_out_0(repl_way_prng_io_out_0),
+    .io_out_1(repl_way_prng_io_out_1),
+    .io_out_2(repl_way_prng_io_out_2),
+    .io_out_3(repl_way_prng_io_out_3),
+    .io_out_4(repl_way_prng_io_out_4),
+    .io_out_5(repl_way_prng_io_out_5),
+    .io_out_6(repl_way_prng_io_out_6),
+    .io_out_7(repl_way_prng_io_out_7),
+    .io_out_8(repl_way_prng_io_out_8),
+    .io_out_9(repl_way_prng_io_out_9),
+    .io_out_10(repl_way_prng_io_out_10),
+    .io_out_11(repl_way_prng_io_out_11),
+    .io_out_12(repl_way_prng_io_out_12),
+    .io_out_13(repl_way_prng_io_out_13),
+    .io_out_14(repl_way_prng_io_out_14),
+    .io_out_15(repl_way_prng_io_out_15)
+  );
+  tag_array_0 tag_array ( // @[icache.scala 180:30 chipyard.TestHarness.LargeBoomConfig.fir 176730:4]
+    .RW0_addr(tag_array_RW0_addr),
+    .RW0_en(tag_array_RW0_en),
+    .RW0_clk(tag_array_RW0_clk),
+    .RW0_wmode(tag_array_RW0_wmode),
+    .RW0_wdata_0(tag_array_RW0_wdata_0),
+    .RW0_wdata_1(tag_array_RW0_wdata_1),
+    .RW0_wdata_2(tag_array_RW0_wdata_2),
+    .RW0_wdata_3(tag_array_RW0_wdata_3),
+    .RW0_wdata_4(tag_array_RW0_wdata_4),
+    .RW0_wdata_5(tag_array_RW0_wdata_5),
+    .RW0_wdata_6(tag_array_RW0_wdata_6),
+    .RW0_wdata_7(tag_array_RW0_wdata_7),
+    .RW0_rdata_0(tag_array_RW0_rdata_0),
+    .RW0_rdata_1(tag_array_RW0_rdata_1),
+    .RW0_rdata_2(tag_array_RW0_rdata_2),
+    .RW0_rdata_3(tag_array_RW0_rdata_3),
+    .RW0_rdata_4(tag_array_RW0_rdata_4),
+    .RW0_rdata_5(tag_array_RW0_rdata_5),
+    .RW0_rdata_6(tag_array_RW0_rdata_6),
+    .RW0_rdata_7(tag_array_RW0_rdata_7),
+    .RW0_wmask_0(tag_array_RW0_wmask_0),
+    .RW0_wmask_1(tag_array_RW0_wmask_1),
+    .RW0_wmask_2(tag_array_RW0_wmask_2),
+    .RW0_wmask_3(tag_array_RW0_wmask_3),
+    .RW0_wmask_4(tag_array_RW0_wmask_4),
+    .RW0_wmask_5(tag_array_RW0_wmask_5),
+    .RW0_wmask_6(tag_array_RW0_wmask_6),
+    .RW0_wmask_7(tag_array_RW0_wmask_7)
+  );
+  dataArrayB0Way_0 dataArrayB0Way_0 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176893:4]
+    .RW0_addr(dataArrayB0Way_0_RW0_addr),
+    .RW0_en(dataArrayB0Way_0_RW0_en),
+    .RW0_clk(dataArrayB0Way_0_RW0_clk),
+    .RW0_wmode(dataArrayB0Way_0_RW0_wmode),
+    .RW0_wdata(dataArrayB0Way_0_RW0_wdata),
+    .RW0_rdata(dataArrayB0Way_0_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB0Way_1 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176894:4]
+    .RW0_addr(dataArrayB0Way_1_RW0_addr),
+    .RW0_en(dataArrayB0Way_1_RW0_en),
+    .RW0_clk(dataArrayB0Way_1_RW0_clk),
+    .RW0_wmode(dataArrayB0Way_1_RW0_wmode),
+    .RW0_wdata(dataArrayB0Way_1_RW0_wdata),
+    .RW0_rdata(dataArrayB0Way_1_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB0Way_2 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176895:4]
+    .RW0_addr(dataArrayB0Way_2_RW0_addr),
+    .RW0_en(dataArrayB0Way_2_RW0_en),
+    .RW0_clk(dataArrayB0Way_2_RW0_clk),
+    .RW0_wmode(dataArrayB0Way_2_RW0_wmode),
+    .RW0_wdata(dataArrayB0Way_2_RW0_wdata),
+    .RW0_rdata(dataArrayB0Way_2_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB0Way_3 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176896:4]
+    .RW0_addr(dataArrayB0Way_3_RW0_addr),
+    .RW0_en(dataArrayB0Way_3_RW0_en),
+    .RW0_clk(dataArrayB0Way_3_RW0_clk),
+    .RW0_wmode(dataArrayB0Way_3_RW0_wmode),
+    .RW0_wdata(dataArrayB0Way_3_RW0_wdata),
+    .RW0_rdata(dataArrayB0Way_3_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB0Way_4 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176897:4]
+    .RW0_addr(dataArrayB0Way_4_RW0_addr),
+    .RW0_en(dataArrayB0Way_4_RW0_en),
+    .RW0_clk(dataArrayB0Way_4_RW0_clk),
+    .RW0_wmode(dataArrayB0Way_4_RW0_wmode),
+    .RW0_wdata(dataArrayB0Way_4_RW0_wdata),
+    .RW0_rdata(dataArrayB0Way_4_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB0Way_5 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176898:4]
+    .RW0_addr(dataArrayB0Way_5_RW0_addr),
+    .RW0_en(dataArrayB0Way_5_RW0_en),
+    .RW0_clk(dataArrayB0Way_5_RW0_clk),
+    .RW0_wmode(dataArrayB0Way_5_RW0_wmode),
+    .RW0_wdata(dataArrayB0Way_5_RW0_wdata),
+    .RW0_rdata(dataArrayB0Way_5_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB0Way_6 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176899:4]
+    .RW0_addr(dataArrayB0Way_6_RW0_addr),
+    .RW0_en(dataArrayB0Way_6_RW0_en),
+    .RW0_clk(dataArrayB0Way_6_RW0_clk),
+    .RW0_wmode(dataArrayB0Way_6_RW0_wmode),
+    .RW0_wdata(dataArrayB0Way_6_RW0_wdata),
+    .RW0_rdata(dataArrayB0Way_6_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB0Way_7 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176900:4]
+    .RW0_addr(dataArrayB0Way_7_RW0_addr),
+    .RW0_en(dataArrayB0Way_7_RW0_en),
+    .RW0_clk(dataArrayB0Way_7_RW0_clk),
+    .RW0_wmode(dataArrayB0Way_7_RW0_wmode),
+    .RW0_wdata(dataArrayB0Way_7_RW0_wdata),
+    .RW0_rdata(dataArrayB0Way_7_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB1Way_0 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176901:4]
+    .RW0_addr(dataArrayB1Way_0_RW0_addr),
+    .RW0_en(dataArrayB1Way_0_RW0_en),
+    .RW0_clk(dataArrayB1Way_0_RW0_clk),
+    .RW0_wmode(dataArrayB1Way_0_RW0_wmode),
+    .RW0_wdata(dataArrayB1Way_0_RW0_wdata),
+    .RW0_rdata(dataArrayB1Way_0_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB1Way_1 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176902:4]
+    .RW0_addr(dataArrayB1Way_1_RW0_addr),
+    .RW0_en(dataArrayB1Way_1_RW0_en),
+    .RW0_clk(dataArrayB1Way_1_RW0_clk),
+    .RW0_wmode(dataArrayB1Way_1_RW0_wmode),
+    .RW0_wdata(dataArrayB1Way_1_RW0_wdata),
+    .RW0_rdata(dataArrayB1Way_1_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB1Way_2 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176903:4]
+    .RW0_addr(dataArrayB1Way_2_RW0_addr),
+    .RW0_en(dataArrayB1Way_2_RW0_en),
+    .RW0_clk(dataArrayB1Way_2_RW0_clk),
+    .RW0_wmode(dataArrayB1Way_2_RW0_wmode),
+    .RW0_wdata(dataArrayB1Way_2_RW0_wdata),
+    .RW0_rdata(dataArrayB1Way_2_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB1Way_3 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176904:4]
+    .RW0_addr(dataArrayB1Way_3_RW0_addr),
+    .RW0_en(dataArrayB1Way_3_RW0_en),
+    .RW0_clk(dataArrayB1Way_3_RW0_clk),
+    .RW0_wmode(dataArrayB1Way_3_RW0_wmode),
+    .RW0_wdata(dataArrayB1Way_3_RW0_wdata),
+    .RW0_rdata(dataArrayB1Way_3_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB1Way_4 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176905:4]
+    .RW0_addr(dataArrayB1Way_4_RW0_addr),
+    .RW0_en(dataArrayB1Way_4_RW0_en),
+    .RW0_clk(dataArrayB1Way_4_RW0_clk),
+    .RW0_wmode(dataArrayB1Way_4_RW0_wmode),
+    .RW0_wdata(dataArrayB1Way_4_RW0_wdata),
+    .RW0_rdata(dataArrayB1Way_4_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB1Way_5 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176906:4]
+    .RW0_addr(dataArrayB1Way_5_RW0_addr),
+    .RW0_en(dataArrayB1Way_5_RW0_en),
+    .RW0_clk(dataArrayB1Way_5_RW0_clk),
+    .RW0_wmode(dataArrayB1Way_5_RW0_wmode),
+    .RW0_wdata(dataArrayB1Way_5_RW0_wdata),
+    .RW0_rdata(dataArrayB1Way_5_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB1Way_6 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176907:4]
+    .RW0_addr(dataArrayB1Way_6_RW0_addr),
+    .RW0_en(dataArrayB1Way_6_RW0_en),
+    .RW0_clk(dataArrayB1Way_6_RW0_clk),
+    .RW0_wmode(dataArrayB1Way_6_RW0_wmode),
+    .RW0_wdata(dataArrayB1Way_6_RW0_wdata),
+    .RW0_rdata(dataArrayB1Way_6_RW0_rdata)
+  );
+  dataArrayB0Way_0 dataArrayB1Way_7 ( // @[DescribedSRAM.scala 19:26 chipyard.TestHarness.LargeBoomConfig.fir 176908:4]
+    .RW0_addr(dataArrayB1Way_7_RW0_addr),
+    .RW0_en(dataArrayB1Way_7_RW0_en),
+    .RW0_clk(dataArrayB1Way_7_RW0_clk),
+    .RW0_wmode(dataArrayB1Way_7_RW0_wmode),
+    .RW0_wdata(dataArrayB1Way_7_RW0_wdata),
+    .RW0_rdata(dataArrayB1Way_7_RW0_rdata)
+  );
+  assign auto_master_out_a_valid = _bundleOut_0_a_valid_T_1 & _bundleOut_0_a_valid_T_2; // @[icache.scala 351:46 chipyard.TestHarness.LargeBoomConfig.fir 177346:4]
+  assign auto_master_out_a_bits_address = {refill_paddr[31:6], 6'h0}; // @[icache.scala 354:48 chipyard.TestHarness.LargeBoomConfig.fir 177349:4]
+  assign io_req_ready = ~refill_one_beat; // @[icache.scala 171:19 chipyard.TestHarness.LargeBoomConfig.fir 176667:4]
+  assign io_resp_valid = s2_valid & s2_hit; // @[icache.scala 349:29 chipyard.TestHarness.LargeBoomConfig.fir 177341:4]
+  assign io_resp_bits_data = s2_bankid ? _s2_data_T : _s2_data_T_1; // @[icache.scala 341:10 chipyard.TestHarness.LargeBoomConfig.fir 177339:4]
+  assign repl_way_prng_clock = clock; // @[chipyard.TestHarness.LargeBoomConfig.fir 176694:4]
+  assign repl_way_prng_reset = reset; // @[chipyard.TestHarness.LargeBoomConfig.fir 176695:4]
+  assign repl_way_prng_io_increment = auto_master_out_a_ready & tl_out_a_valid; // @[Decoupled.scala 40:37 chipyard.TestHarness.LargeBoomConfig.fir 176648:4]
+  assign tag_array_RW0_wdata_0 = refill_paddr[31:12]; // @[icache.scala 167:32 chipyard.TestHarness.LargeBoomConfig.fir 176662:4]
+  assign tag_array_RW0_wdata_1 = refill_paddr[31:12]; // @[icache.scala 167:32 chipyard.TestHarness.LargeBoomConfig.fir 176662:4]
+  assign tag_array_RW0_wdata_2 = refill_paddr[31:12]; // @[icache.scala 167:32 chipyard.TestHarness.LargeBoomConfig.fir 176662:4]
+  assign tag_array_RW0_wdata_3 = refill_paddr[31:12]; // @[icache.scala 167:32 chipyard.TestHarness.LargeBoomConfig.fir 176662:4]
+  assign tag_array_RW0_wdata_4 = refill_paddr[31:12]; // @[icache.scala 167:32 chipyard.TestHarness.LargeBoomConfig.fir 176662:4]
+  assign tag_array_RW0_wdata_5 = refill_paddr[31:12]; // @[icache.scala 167:32 chipyard.TestHarness.LargeBoomConfig.fir 176662:4]
+  assign tag_array_RW0_wdata_6 = refill_paddr[31:12]; // @[icache.scala 167:32 chipyard.TestHarness.LargeBoomConfig.fir 176662:4]
+  assign tag_array_RW0_wdata_7 = refill_paddr[31:12]; // @[icache.scala 167:32 chipyard.TestHarness.LargeBoomConfig.fir 176662:4]
+  assign tag_array_RW0_wmask_0 = repl_way == 3'h0; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176752:6]
+  assign tag_array_RW0_wmask_1 = repl_way == 3'h1; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176753:6]
+  assign tag_array_RW0_wmask_2 = repl_way == 3'h2; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176754:6]
+  assign tag_array_RW0_wmask_3 = repl_way == 3'h3; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176755:6]
+  assign tag_array_RW0_wmask_4 = repl_way == 3'h4; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176756:6]
+  assign tag_array_RW0_wmask_5 = repl_way == 3'h5; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176757:6]
+  assign tag_array_RW0_wmask_6 = repl_way == 3'h6; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176758:6]
+  assign tag_array_RW0_wmask_7 = repl_way == 3'h7; // @[icache.scala 183:100 chipyard.TestHarness.LargeBoomConfig.fir 176759:6]
+  assign dataArrayB0Way_0_RW0_wdata = auto_master_out_d_bits_data[63:0]; // @[icache.scala 316:47 chipyard.TestHarness.LargeBoomConfig.fir 176929:6]
+  assign dataArrayB0Way_1_RW0_wdata = auto_master_out_d_bits_data[63:0]; // @[icache.scala 316:47 chipyard.TestHarness.LargeBoomConfig.fir 176976:6]
+  assign dataArrayB0Way_2_RW0_wdata = auto_master_out_d_bits_data[63:0]; // @[icache.scala 316:47 chipyard.TestHarness.LargeBoomConfig.fir 177023:6]
+  assign dataArrayB0Way_3_RW0_wdata = auto_master_out_d_bits_data[63:0]; // @[icache.scala 316:47 chipyard.TestHarness.LargeBoomConfig.fir 177070:6]
+  assign dataArrayB0Way_4_RW0_wdata = auto_master_out_d_bits_data[63:0]; // @[icache.scala 316:47 chipyard.TestHarness.LargeBoomConfig.fir 177117:6]
+  assign dataArrayB0Way_5_RW0_wdata = auto_master_out_d_bits_data[63:0]; // @[icache.scala 316:47 chipyard.TestHarness.LargeBoomConfig.fir 177164:6]
+  assign dataArrayB0Way_6_RW0_wdata = auto_master_out_d_bits_data[63:0]; // @[icache.scala 316:47 chipyard.TestHarness.LargeBoomConfig.fir 177211:6]
+  assign dataArrayB0Way_7_RW0_wdata = auto_master_out_d_bits_data[63:0]; // @[icache.scala 316:47 chipyard.TestHarness.LargeBoomConfig.fir 177258:6]
+  assign dataArrayB1Way_0_RW0_wdata = auto_master_out_d_bits_data[127:64]; // @[icache.scala 317:47 chipyard.TestHarness.LargeBoomConfig.fir 176932:6]
+  assign dataArrayB1Way_1_RW0_wdata = auto_master_out_d_bits_data[127:64]; // @[icache.scala 317:47 chipyard.TestHarness.LargeBoomConfig.fir 176979:6]
+  assign dataArrayB1Way_2_RW0_wdata = auto_master_out_d_bits_data[127:64]; // @[icache.scala 317:47 chipyard.TestHarness.LargeBoomConfig.fir 177026:6]
+  assign dataArrayB1Way_3_RW0_wdata = auto_master_out_d_bits_data[127:64]; // @[icache.scala 317:47 chipyard.TestHarness.LargeBoomConfig.fir 177073:6]
+  assign dataArrayB1Way_4_RW0_wdata = auto_master_out_d_bits_data[127:64]; // @[icache.scala 317:47 chipyard.TestHarness.LargeBoomConfig.fir 177120:6]
+  assign dataArrayB1Way_5_RW0_wdata = auto_master_out_d_bits_data[127:64]; // @[icache.scala 317:47 chipyard.TestHarness.LargeBoomConfig.fir 177167:6]
+  assign dataArrayB1Way_6_RW0_wdata = auto_master_out_d_bits_data[127:64]; // @[icache.scala 317:47 chipyard.TestHarness.LargeBoomConfig.fir 177214:6]
+  assign dataArrayB1Way_7_RW0_wdata = auto_master_out_d_bits_data[127:64]; // @[icache.scala 317:47 chipyard.TestHarness.LargeBoomConfig.fir 177261:6]
+  assign tag_array_RW0_wmode = refill_one_beat & d_done; // @[icache.scala 174:37 chipyard.TestHarness.LargeBoomConfig.fir 176691:4]
+  assign tag_array_RW0_clk = clock;
+  assign tag_array_RW0_en = _tag_rdata_T_2 | refill_done;
+  assign tag_array_RW0_addr = refill_done ? refill_idx : io_req_bits_addr[11:6];
+  assign dataArrayB0Way_0_RW0_wmode = _wen_T_1 & _T_1; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 176916:4]
+  assign dataArrayB0Way_0_RW0_clk = clock;
+  assign dataArrayB0Way_0_RW0_en = _s2_dout_0_T_1 | wen;
+  assign dataArrayB0Way_0_RW0_addr = refill_one_beat ? _T_30 : _T_34; // @[icache.scala 308:14 chipyard.TestHarness.LargeBoomConfig.fir 176923:4]
+  assign dataArrayB0Way_1_RW0_wmode = _wen_T_1 & _T_2; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 176963:4]
+  assign dataArrayB0Way_1_RW0_clk = clock;
+  assign dataArrayB0Way_1_RW0_en = _s2_dout_1_T_1 | wen_1;
+  assign dataArrayB0Way_1_RW0_addr = refill_one_beat ? _T_30 : _T_34; // @[icache.scala 308:14 chipyard.TestHarness.LargeBoomConfig.fir 176970:4]
+  assign dataArrayB0Way_2_RW0_wmode = _wen_T_1 & _T_3; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177010:4]
+  assign dataArrayB0Way_2_RW0_clk = clock;
+  assign dataArrayB0Way_2_RW0_en = _s2_dout_2_T_1 | wen_2;
+  assign dataArrayB0Way_2_RW0_addr = refill_one_beat ? _T_30 : _T_34; // @[icache.scala 308:14 chipyard.TestHarness.LargeBoomConfig.fir 177017:4]
+  assign dataArrayB0Way_3_RW0_wmode = _wen_T_1 & _T_4; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177057:4]
+  assign dataArrayB0Way_3_RW0_clk = clock;
+  assign dataArrayB0Way_3_RW0_en = _s2_dout_3_T_1 | wen_3;
+  assign dataArrayB0Way_3_RW0_addr = refill_one_beat ? _T_30 : _T_34; // @[icache.scala 308:14 chipyard.TestHarness.LargeBoomConfig.fir 177064:4]
+  assign dataArrayB0Way_4_RW0_wmode = _wen_T_1 & _T_5; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177104:4]
+  assign dataArrayB0Way_4_RW0_clk = clock;
+  assign dataArrayB0Way_4_RW0_en = _s2_dout_4_T_1 | wen_4;
+  assign dataArrayB0Way_4_RW0_addr = refill_one_beat ? _T_30 : _T_34; // @[icache.scala 308:14 chipyard.TestHarness.LargeBoomConfig.fir 177111:4]
+  assign dataArrayB0Way_5_RW0_wmode = _wen_T_1 & _T_6; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177151:4]
+  assign dataArrayB0Way_5_RW0_clk = clock;
+  assign dataArrayB0Way_5_RW0_en = _s2_dout_5_T_1 | wen_5;
+  assign dataArrayB0Way_5_RW0_addr = refill_one_beat ? _T_30 : _T_34; // @[icache.scala 308:14 chipyard.TestHarness.LargeBoomConfig.fir 177158:4]
+  assign dataArrayB0Way_6_RW0_wmode = _wen_T_1 & _T_7; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177198:4]
+  assign dataArrayB0Way_6_RW0_clk = clock;
+  assign dataArrayB0Way_6_RW0_en = _s2_dout_6_T_1 | wen_6;
+  assign dataArrayB0Way_6_RW0_addr = refill_one_beat ? _T_30 : _T_34; // @[icache.scala 308:14 chipyard.TestHarness.LargeBoomConfig.fir 177205:4]
+  assign dataArrayB0Way_7_RW0_wmode = _wen_T_1 & _T_8; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177245:4]
+  assign dataArrayB0Way_7_RW0_clk = clock;
+  assign dataArrayB0Way_7_RW0_en = _s2_dout_7_T_1 | wen_7;
+  assign dataArrayB0Way_7_RW0_addr = refill_one_beat ? _T_30 : _T_34; // @[icache.scala 308:14 chipyard.TestHarness.LargeBoomConfig.fir 177252:4]
+  assign dataArrayB1Way_0_RW0_wmode = _wen_T_1 & _T_1; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 176916:4]
+  assign dataArrayB1Way_0_RW0_clk = clock;
+  assign dataArrayB1Way_0_RW0_en = _s2_dout_0_T_1 | wen;
+  assign dataArrayB1Way_0_RW0_addr = refill_one_beat ? _T_30 : io_req_bits_addr[11:4]; // @[icache.scala 311:14 chipyard.TestHarness.LargeBoomConfig.fir 176927:4]
+  assign dataArrayB1Way_1_RW0_wmode = _wen_T_1 & _T_2; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 176963:4]
+  assign dataArrayB1Way_1_RW0_clk = clock;
+  assign dataArrayB1Way_1_RW0_en = _s2_dout_1_T_1 | wen_1;
+  assign dataArrayB1Way_1_RW0_addr = refill_one_beat ? _T_30 : io_req_bits_addr[11:4]; // @[icache.scala 311:14 chipyard.TestHarness.LargeBoomConfig.fir 176974:4]
+  assign dataArrayB1Way_2_RW0_wmode = _wen_T_1 & _T_3; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177010:4]
+  assign dataArrayB1Way_2_RW0_clk = clock;
+  assign dataArrayB1Way_2_RW0_en = _s2_dout_2_T_1 | wen_2;
+  assign dataArrayB1Way_2_RW0_addr = refill_one_beat ? _T_30 : io_req_bits_addr[11:4]; // @[icache.scala 311:14 chipyard.TestHarness.LargeBoomConfig.fir 177021:4]
+  assign dataArrayB1Way_3_RW0_wmode = _wen_T_1 & _T_4; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177057:4]
+  assign dataArrayB1Way_3_RW0_clk = clock;
+  assign dataArrayB1Way_3_RW0_en = _s2_dout_3_T_1 | wen_3;
+  assign dataArrayB1Way_3_RW0_addr = refill_one_beat ? _T_30 : io_req_bits_addr[11:4]; // @[icache.scala 311:14 chipyard.TestHarness.LargeBoomConfig.fir 177068:4]
+  assign dataArrayB1Way_4_RW0_wmode = _wen_T_1 & _T_5; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177104:4]
+  assign dataArrayB1Way_4_RW0_clk = clock;
+  assign dataArrayB1Way_4_RW0_en = _s2_dout_4_T_1 | wen_4;
+  assign dataArrayB1Way_4_RW0_addr = refill_one_beat ? _T_30 : io_req_bits_addr[11:4]; // @[icache.scala 311:14 chipyard.TestHarness.LargeBoomConfig.fir 177115:4]
+  assign dataArrayB1Way_5_RW0_wmode = _wen_T_1 & _T_6; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177151:4]
+  assign dataArrayB1Way_5_RW0_clk = clock;
+  assign dataArrayB1Way_5_RW0_en = _s2_dout_5_T_1 | wen_5;
+  assign dataArrayB1Way_5_RW0_addr = refill_one_beat ? _T_30 : io_req_bits_addr[11:4]; // @[icache.scala 311:14 chipyard.TestHarness.LargeBoomConfig.fir 177162:4]
+  assign dataArrayB1Way_6_RW0_wmode = _wen_T_1 & _T_7; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177198:4]
+  assign dataArrayB1Way_6_RW0_clk = clock;
+  assign dataArrayB1Way_6_RW0_en = _s2_dout_6_T_1 | wen_6;
+  assign dataArrayB1Way_6_RW0_addr = refill_one_beat ? _T_30 : io_req_bits_addr[11:4]; // @[icache.scala 311:14 chipyard.TestHarness.LargeBoomConfig.fir 177209:4]
+  assign dataArrayB1Way_7_RW0_wmode = _wen_T_1 & _T_8; // @[icache.scala 285:50 chipyard.TestHarness.LargeBoomConfig.fir 177245:4]
+  assign dataArrayB1Way_7_RW0_clk = clock;
+  assign dataArrayB1Way_7_RW0_en = _s2_dout_7_T_1 | wen_7;
+  assign dataArrayB1Way_7_RW0_addr = refill_one_beat ? _T_30 : io_req_bits_addr[11:4]; // @[icache.scala 311:14 chipyard.TestHarness.LargeBoomConfig.fir 177256:4]
+  always @(posedge clock) begin
+    s1_valid <= io_req_ready & io_req_valid; // @[Decoupled.scala 40:37 chipyard.TestHarness.LargeBoomConfig.fir 176629:4]
+    if (reset) begin // @[icache.scala 186:25 chipyard.TestHarness.LargeBoomConfig.fir 176786:4]
+      vb_array <= 512'h0; // @[icache.scala 186:25 chipyard.TestHarness.LargeBoomConfig.fir 176786:4]
+    end else if (io_invalidate) begin // @[icache.scala 191:24 chipyard.TestHarness.LargeBoomConfig.fir 176799:4]
+      vb_array <= 512'h0; // @[icache.scala 192:14 chipyard.TestHarness.LargeBoomConfig.fir 176800:6]
+    end else if (refill_one_beat) begin // @[icache.scala 187:26 chipyard.TestHarness.LargeBoomConfig.fir 176787:4]
+      if (_vb_array_T_2) begin // @[icache.scala 188:32 chipyard.TestHarness.LargeBoomConfig.fir 176796:6]
+        vb_array <= _vb_array_T_4;
+      end else begin
+        vb_array <= _vb_array_T_7;
+      end
+    end
+    s2_valid <= s1_valid & _s2_valid_T; // @[icache.scala 158:35 chipyard.TestHarness.LargeBoomConfig.fir 176641:4]
+    s2_hit <= _s1_hit_T_5 | s1_tag_hit_7; // @[icache.scala 157:35 chipyard.TestHarness.LargeBoomConfig.fir 176639:4]
+    if (_bundleOut_0_a_valid_T) begin // @[icache.scala 362:24 chipyard.TestHarness.LargeBoomConfig.fir 177561:4]
+      invalidated <= 1'h0; // @[icache.scala 362:38 chipyard.TestHarness.LargeBoomConfig.fir 177562:6]
+    end else begin
+      invalidated <= _GEN_43;
+    end
+    if (reset) begin // @[icache.scala 163:29 chipyard.TestHarness.LargeBoomConfig.fir 176647:4]
+      refill_valid <= 1'h0; // @[icache.scala 163:29 chipyard.TestHarness.LargeBoomConfig.fir 176647:4]
+    end else if (refill_done) begin // @[icache.scala 364:22 chipyard.TestHarness.LargeBoomConfig.fir 177567:4]
+      refill_valid <= 1'h0; // @[icache.scala 364:37 chipyard.TestHarness.LargeBoomConfig.fir 177568:6]
+    end else begin
+      refill_valid <= _GEN_165;
+    end
+    s2_miss_REG <= refill_valid; // @[icache.scala 165:48 chipyard.TestHarness.LargeBoomConfig.fir 176652:4]
+    if (_refill_paddr_T_2) begin // @[Reg.scala 16:19 chipyard.TestHarness.LargeBoomConfig.fir 176659:4]
+      refill_paddr <= io_s1_paddr; // @[Reg.scala 16:23 chipyard.TestHarness.LargeBoomConfig.fir 176660:6]
+    end
+    if (reset) begin // @[Edges.scala 228:27 chipyard.TestHarness.LargeBoomConfig.fir 176677:4]
+      counter <= 8'h0; // @[Edges.scala 228:27 chipyard.TestHarness.LargeBoomConfig.fir 176677:4]
+    end else if (auto_master_out_d_valid) begin // @[Edges.scala 234:17 chipyard.TestHarness.LargeBoomConfig.fir 176687:4]
+      if (first) begin // @[Edges.scala 235:21 chipyard.TestHarness.LargeBoomConfig.fir 176688:6]
+        if (refill_one_beat_opdata) begin // @[Edges.scala 220:14 chipyard.TestHarness.LargeBoomConfig.fir 176676:4]
+          counter <= beats1_decode;
+        end else begin
+          counter <= 8'h0;
+        end
+      end else begin
+        counter <= counter1;
+      end
+    end
+    s1_bankid_REG <= io_req_bits_addr[3]; // @[frontend.scala 151:47 chipyard.TestHarness.LargeBoomConfig.fir 176909:4]
+    s2_dout_0_REG <= {dataArrayB1Way_0_RW0_rdata,dataArrayB0Way_0_RW0_rdata}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 176956:4]
+    s2_dout_1_REG <= {dataArrayB1Way_1_RW0_rdata,dataArrayB0Way_1_RW0_rdata}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 177003:4]
+    s2_dout_2_REG <= {dataArrayB1Way_2_RW0_rdata,dataArrayB0Way_2_RW0_rdata}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 177050:4]
+    s2_dout_3_REG <= {dataArrayB1Way_3_RW0_rdata,dataArrayB0Way_3_RW0_rdata}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 177097:4]
+    s2_dout_4_REG <= {dataArrayB1Way_4_RW0_rdata,dataArrayB0Way_4_RW0_rdata}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 177144:4]
+    s2_dout_5_REG <= {dataArrayB1Way_5_RW0_rdata,dataArrayB0Way_5_RW0_rdata}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 177191:4]
+    s2_dout_6_REG <= {dataArrayB1Way_6_RW0_rdata,dataArrayB0Way_6_RW0_rdata}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 177238:4]
+    s2_dout_7_REG <= {dataArrayB1Way_7_RW0_rdata,dataArrayB0Way_7_RW0_rdata}; // @[Cat.scala 30:58 chipyard.TestHarness.LargeBoomConfig.fir 177285:4]
+    s2_tag_hit_0 <= s1_vb & _s1_tag_hit_0_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176811:4]
+    s2_tag_hit_1 <= s1_vb_1 & _s1_tag_hit_1_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176819:4]
+    s2_tag_hit_2 <= s1_vb_2 & _s1_tag_hit_2_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176827:4]
+    s2_tag_hit_3 <= s1_vb_3 & _s1_tag_hit_3_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176835:4]
+    s2_tag_hit_4 <= s1_vb_4 & _s1_tag_hit_4_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176843:4]
+    s2_tag_hit_5 <= s1_vb_5 & _s1_tag_hit_5_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176851:4]
+    s2_tag_hit_6 <= s1_vb_6 & _s1_tag_hit_6_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176859:4]
+    s2_tag_hit_7 <= s1_vb_7 & _s1_tag_hit_7_T; // @[icache.scala 204:28 chipyard.TestHarness.LargeBoomConfig.fir 176867:4]
+    s2_bankid <= s1_bankid_REG; // @[icache.scala 197:23 chipyard.TestHarness.LargeBoomConfig.fir 176804:4 icache.scala 281:15 chipyard.TestHarness.LargeBoomConfig.fir 176912:4]
+    `ifndef SYNTHESIS
+    `ifdef PRINTF_COND
+      if (`PRINTF_COND) begin
+    `endif
+        if (_T_28) begin
+          $fwrite(32'h80000002,
+            "Assertion failed\n    at icache.scala:206 assert(PopCount(s1_tag_hit) <= 1.U || !s1_valid)\n"); // @[icache.scala 206:9 chipyard.TestHarness.LargeBoomConfig.fir 176890:6]
+        end
+    `ifdef PRINTF_COND
+      end
+    `endif
+    `endif // SYNTHESIS
+    `ifndef SYNTHESIS
+    `ifdef STOP_COND
+      if (`STOP_COND) begin
+    `endif
+        if (_T_28) begin
+          $fatal; // @[icache.scala 206:9 chipyard.TestHarness.LargeBoomConfig.fir 176891:6]
+        end
+    `ifdef STOP_COND
+      end
+    `endif
+    `endif // SYNTHESIS
+  end
+// Register and memory initialization
+`ifdef RANDOMIZE_GARBAGE_ASSIGN
+`define RANDOMIZE
+`endif
+`ifdef RANDOMIZE_INVALID_ASSIGN
+`define RANDOMIZE
+`endif
+`ifdef RANDOMIZE_REG_INIT
+`define RANDOMIZE
+`endif
+`ifdef RANDOMIZE_MEM_INIT
+`define RANDOMIZE
+`endif
+`ifndef RANDOM
+`define RANDOM $random
+`endif
+`ifdef RANDOMIZE_MEM_INIT
+  integer initvar;
+`endif
+`ifndef SYNTHESIS
+`ifdef FIRRTL_BEFORE_INITIAL
+`FIRRTL_BEFORE_INITIAL
+`endif
+initial begin
+  `ifdef RANDOMIZE
+    `ifdef INIT_RANDOM
+      `INIT_RANDOM
+    `endif
+    `ifndef VERILATOR
+      `ifdef RANDOMIZE_DELAY
+        #`RANDOMIZE_DELAY begin end
+      `else
+        #0.002 begin end
+      `endif
+    `endif
+`ifdef RANDOMIZE_REG_INIT
+  _RAND_0 = {1{`RANDOM}};
+  s1_valid = _RAND_0[0:0];
+  _RAND_1 = {16{`RANDOM}};
+  vb_array = _RAND_1[511:0];
+  _RAND_2 = {1{`RANDOM}};
+  s2_valid = _RAND_2[0:0];
+  _RAND_3 = {1{`RANDOM}};
+  s2_hit = _RAND_3[0:0];
+  _RAND_4 = {1{`RANDOM}};
+  invalidated = _RAND_4[0:0];
+  _RAND_5 = {1{`RANDOM}};
+  refill_valid = _RAND_5[0:0];
+  _RAND_6 = {1{`RANDOM}};
+  s2_miss_REG = _RAND_6[0:0];
+  _RAND_7 = {1{`RANDOM}};
+  refill_paddr = _RAND_7[31:0];
+  _RAND_8 = {1{`RANDOM}};
+  counter = _RAND_8[7:0];
+  _RAND_9 = {1{`RANDOM}};
+  s1_bankid_REG = _RAND_9[0:0];
+  _RAND_10 = {4{`RANDOM}};
+  s2_dout_0_REG = _RAND_10[127:0];
+  _RAND_11 = {4{`RANDOM}};
+  s2_dout_1_REG = _RAND_11[127:0];
+  _RAND_12 = {4{`RANDOM}};
+  s2_dout_2_REG = _RAND_12[127:0];
+  _RAND_13 = {4{`RANDOM}};
+  s2_dout_3_REG = _RAND_13[127:0];
+  _RAND_14 = {4{`RANDOM}};
+  s2_dout_4_REG = _RAND_14[127:0];
+  _RAND_15 = {4{`RANDOM}};
+  s2_dout_5_REG = _RAND_15[127:0];
+  _RAND_16 = {4{`RANDOM}};
+  s2_dout_6_REG = _RAND_16[127:0];
+  _RAND_17 = {4{`RANDOM}};
+  s2_dout_7_REG = _RAND_17[127:0];
+  _RAND_18 = {1{`RANDOM}};
+  s2_tag_hit_0 = _RAND_18[0:0];
+  _RAND_19 = {1{`RANDOM}};
+  s2_tag_hit_1 = _RAND_19[0:0];
+  _RAND_20 = {1{`RANDOM}};
+  s2_tag_hit_2 = _RAND_20[0:0];
+  _RAND_21 = {1{`RANDOM}};
+  s2_tag_hit_3 = _RAND_21[0:0];
+  _RAND_22 = {1{`RANDOM}};
+  s2_tag_hit_4 = _RAND_22[0:0];
+  _RAND_23 = {1{`RANDOM}};
+  s2_tag_hit_5 = _RAND_23[0:0];
+  _RAND_24 = {1{`RANDOM}};
+  s2_tag_hit_6 = _RAND_24[0:0];
+  _RAND_25 = {1{`RANDOM}};
+  s2_tag_hit_7 = _RAND_25[0:0];
+  _RAND_26 = {1{`RANDOM}};
+  s2_bankid = _RAND_26[0:0];
+`endif // RANDOMIZE_REG_INIT
+  `endif // RANDOMIZE
+end // initial
+`ifdef FIRRTL_AFTER_INITIAL
+`FIRRTL_AFTER_INITIAL
+`endif
+`endif // SYNTHESIS
+endmodule

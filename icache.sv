@@ -2,24 +2,25 @@
 
 //connect to original module
 module ICache( // @[chipyard.TestHarness.LargeBoomConfig.fir 176616:2]
-  input          clock, // @[chipyard.TestHarness.LargeBoomConfig.fir 176617:4]
-  input          reset, // @[chipyard.TestHarness.LargeBoomConfig.fir 176618:4]
-  input          auto_master_out_a_ready, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-  output         auto_master_out_a_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-  output [31:0]  auto_master_out_a_bits_address, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-  input          auto_master_out_d_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-  input  [2:0]   auto_master_out_d_bits_opcode, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-  input  [3:0]   auto_master_out_d_bits_size, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-  input  [127:0] auto_master_out_d_bits_data, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
-  output         io_req_ready, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-  input          io_req_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-  input  [38:0]  io_req_bits_addr, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-  input  [31:0]  io_s1_paddr, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-  input          io_s1_kill, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-  input          io_s2_kill, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-  output         io_resp_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-  output [127:0] io_resp_bits_data, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
-  input          io_invalidate // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input  logic         clock, // @[chipyard.TestHarness.LargeBoomConfig.fir 176617:4]
+  input  logic         reset, // @[chipyard.TestHarness.LargeBoomConfig.fir 176618:4]
+  input  logic         auto_master_out_a_ready, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input  logic         auto_master_out_d_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input  logic [2:0]   auto_master_out_d_bits_opcode, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input  logic [3:0]   auto_master_out_d_bits_size, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input  logic [127:0] auto_master_out_d_bits_data, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  input  logic         io_req_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input  logic [38:0]  io_req_bits_addr, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input  logic [31:0]  io_s1_paddr, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input  logic         io_s1_kill, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input  logic         io_s2_kill, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  input  logic         io_invalidate, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+
+  output logic [31:0]  auto_master_out_a_bits_address, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  output logic         auto_master_out_a_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176619:4]
+  output logic         io_req_ready, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  output logic         io_resp_valid, // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
+  output logic [127:0] io_resp_bits_data // @[chipyard.TestHarness.LargeBoomConfig.fir 176620:4]
 );
 
   ValidSTIF #(ICacheST::ICacheRespST) io_resp ();
@@ -28,16 +29,17 @@ module ICache( // @[chipyard.TestHarness.LargeBoomConfig.fir 176616:2]
   DecoupledIF #(BundleST::TLBundleDST) auto_d ();
 
   always_comb begin
+    auto_master_out_a_valid = auto_a.valid;
+    auto_master_out_a_bits_address = auto_a.bits.address;
+    io_req_ready = io_req.ready;
     io_resp_valid = io_resp.valid;
     io_resp_bits_data = io_resp.bits.data;
 
-    io_req_ready = io_req.ready;
+
     io_req.valid = io_req_valid;
     io_req.bits.addr = io_req_bits_addr;
 
     auto_a.ready = auto_master_out_a_ready;
-    auto_master_out_a_bits_address = auto_a.bits.address;
-    auto_master_out_a_valid = auto_a.valid;
 
     auto_d.valid = auto_master_out_d_valid;
     auto_d.bits.opcode = auto_master_out_d_bits_opcode;
@@ -46,14 +48,15 @@ module ICache( // @[chipyard.TestHarness.LargeBoomConfig.fir 176616:2]
 
   end
 
-  ICacheModule icache (
+  ICacheModule cache (
       .clock         (clock),
       .reset         (reset),
       .io_s1_paddr   (io_s1_paddr),
       .io_s1_kill    (io_s1_kill),
       .io_s2_kill    (io_s2_kill),
       .io_invalidate (io_invalidate),
-      .io_s2_prefetch(0),
+      .io_s2_prefetch(1'b0),
+      .io_perf_acquire(),
 
       .io_resp  (io_resp),
       .io_req   (io_req),
@@ -73,10 +76,10 @@ module ICacheModule (
     input logic                  io_s2_prefetch,
     output logic io_perf_acquire,
 
+    DecoupledIF.in io_req,  //ICacheReq
+    DecoupledIF.in io_auto_d,  //TLBundleDST
     ValidSTIF.out   io_resp,  //ICacheResp
-    DecoupledIF.out io_req,  //ICacheReq
-    DecoupledIF.in  io_auto_a,  //TLBundleAST
-    DecoupledIF.out io_auto_d  //TLBundleDST
+    DecoupledIF.out  io_auto_a  //TLBundleAST
 );
 
   localparam wordBits = `fetchBytes * 8;  //16*8
@@ -102,7 +105,7 @@ module ICacheModule (
   always_comb begin
     io_req_fire = io_req.valid && io_req.ready;
     io_auto_a_fire = io_auto_a.valid && io_auto_a.ready;
-    io_auto_d_fire = io_auto_d.vallid && io_auto_d.ready;
+    io_auto_d_fire = io_auto_d.valid && io_auto_d.ready;
   end
   //reg
   logic s1_valid;
@@ -110,42 +113,61 @@ module ICacheModule (
   logic s2_hit;
 
   logic invalidated;
-  logic refill_valid;
+  logic refill_valid;  //refil_fire 有效设置有效，refill_done 设置无效
   logic refill_valid_reg;
-  logic refill_paddr;
-  logic [HasL1CacheParameters::nSets * nWays-1:0] vb_array;
+  logic [`paddrBits-1:0] refill_paddr;
+  logic [nSets * nWays-1:0] vb_array;
   logic s1_bankid;
 
 
   //wire
   logic s0_valid;
-  logic s0_vaddr;
+  logic [`paddrBits-1:0] s0_vaddr;
   logic [nWays-1:0] s1_tag_hit;
-  logic is_hit;
+  logic s1_hit;
 
-  logic refill_fire;
+  logic refill_fire;  // a通道有数据到来设置为true
   logic s2_miss;
   logic [tagBits-1:0] refill_tag;
   logic [idxBits-1:0] refill_idx;
-  logic refill_done;
+  logic refill_done;  //d通道数据传输完成设置为true
   logic [$clog2(nWays)-1:0] repl_way;
-  logic [tagBits] tag_rdata[nWays-1:0];
+  logic [tagBits-1:0] tag_rdata[nWays-1:0];
   logic [wordBits-1:0] s2_dout[nWays-1:0];
 
 
 
   always_comb begin
-    s0_vaddr = io_req_fire;
+    s0_valid = io_req_fire;
     s0_vaddr = io_req.bits.addr;
-    is_hit = |s1_tag_hit;
+    s1_hit = |s1_tag_hit;
 
     refill_fire = io_auto_a_fire;
-    s2_miss = s2_valid && s2_hit && refill_valid_reg;
+    s2_miss = s2_valid && !s2_hit && !refill_valid_reg;
 
     refill_tag = refill_paddr[tagBits + untagBits - 1:untagBits];
 
-    refill_idx = refill_paddr[untagBits - 1:`blockOffBits];
-    // refill_one_beat = io_auto_d_fire && hasData(io_auto_d.bits);
+    refill_idx = refill_paddr[HasL1CacheParameters::untagBits - 1:`blockOffBits];
+  end
+
+  always_ff @(posedge clock or posedge reset) begin
+    if (reset)begin
+      s1_valid <= 0;
+      s2_valid <= 0;
+      s2_hit <= 0;
+      refill_valid_reg <= 0;
+      refill_paddr <= 0;
+    end
+    else begin
+      s1_valid <= s0_valid;
+      s2_valid <= s1_valid && !io_s1_kill;
+      s2_hit <= s1_hit;
+      refill_valid_reg <= refill_valid;
+
+      if (s1_valid && !(refill_valid || s2_miss))begin
+        refill_paddr <= io_s1_paddr;
+      end
+    end
   end
 
 
@@ -189,70 +211,14 @@ module ICacheModule (
   assign refill_done = refill_one_beat && d_done;
   
 
-  //assign val repl_way = if (isDM) 0.U else LFSR(16, refill_fire)(log2Ceil(nWays)-1,0)
-  wire  repl_way_prng_io_out_0; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_1; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_2; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_3; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_4; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_5; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_6; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_7; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_8; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_9; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_10; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_11; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_12; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_13; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_14; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-  wire  repl_way_prng_io_out_15;
-
-  MaxPeriodFibonacciLFSR_1
-      repl_way_prng (  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
-      .clock       (clock),
-      .reset       (reset),
-      .io_increment(refill_fire),
-      .io_out_0    (repl_way_prng_io_out_0),
-      .io_out_1    (repl_way_prng_io_out_1),
-      .io_out_2    (repl_way_prng_io_out_2),
-      .io_out_3    (repl_way_prng_io_out_3),
-      .io_out_4    (repl_way_prng_io_out_4),
-      .io_out_5    (repl_way_prng_io_out_5),
-      .io_out_6    (repl_way_prng_io_out_6),
-      .io_out_7    (repl_way_prng_io_out_7),
-      .io_out_8    (repl_way_prng_io_out_8),
-      .io_out_9    (repl_way_prng_io_out_9),
-      .io_out_10   (repl_way_prng_io_out_10),
-      .io_out_11   (repl_way_prng_io_out_11),
-      .io_out_12   (repl_way_prng_io_out_12),
-      .io_out_13   (repl_way_prng_io_out_13),
-      .io_out_14   (repl_way_prng_io_out_14),
-      .io_out_15   (repl_way_prng_io_out_15)
-  );
-
-  wire [7:0] repl_way_lo = {
-    repl_way_prng_io_out_7,
-    repl_way_prng_io_out_6,
-    repl_way_prng_io_out_5,
-    repl_way_prng_io_out_4,
-    repl_way_prng_io_out_3,
-    repl_way_prng_io_out_2,
-    repl_way_prng_io_out_1,
-    repl_way_prng_io_out_0
-  };  // @[PRNG.scala 86:17 chipyard.TestHarness.LargeBoomConfig.fir 176720:4]
-  wire [15:0] _repl_way_T = {
-    repl_way_prng_io_out_15,
-    repl_way_prng_io_out_14,
-    repl_way_prng_io_out_13,
-    repl_way_prng_io_out_12,
-    repl_way_prng_io_out_11,
-    repl_way_prng_io_out_10,
-    repl_way_prng_io_out_9,
-    repl_way_prng_io_out_8,
-    repl_way_lo
-  };  // @[PRNG.scala 86:17 chipyard.TestHarness.LargeBoomConfig.fir 176728:4]
-
-  assign repl_way = HasL1CacheParameters::isDM ? 0 : _repl_way_T[$clog2(nWays) - 1:0];
+  logic [15:0] LFSR16_out;
+  logic sadfasdf;
+  LFSR16 ls(
+    .clock(clock), 
+    .reset(reset), 
+    .increment(refill_fire), 
+    .data_out(LFSR16_out));
+  assign repl_way = LFSR16_out[$clog2(nWays) - 1:0];
 
 
   //tag_array assign 
@@ -261,7 +227,7 @@ module ICacheModule (
 
   generate 
     for (genvar i = 0; i < nWays; i++) begin
-      assign repl_way_1H[i] = repl_way == i? 1: 0;
+      assign repl_way_1H[i] = repl_way == i? 1'b1: 1'b0;
       assign refill_tag_wdata[i] = refill_tag ;
     end
   endgenerate
@@ -272,6 +238,7 @@ module ICacheModule (
       .WMASK_WIDTH(nWays)
   ) tag_array (
       .clk  (clock),
+      .reset (reset),
       .wen  (refill_done),
       .waddr(refill_idx),
       .cs   (repl_way_1H),
@@ -309,29 +276,30 @@ module ICacheModule (
   end
 
 
+  logic [tagBits-1:0] s1_tag;
+  logic [idxBits-1:0] s1_idx;
+  assign s1_idx = io_s1_paddr[untagBits - 1:`blockOffBits];
+  assign s1_tag = io_s1_paddr[tagBits + untagBits - 1:untagBits];
   generate
     for (genvar i = 0; i < nWays; i++) begin
-      logic [idxBits-1:0] s1_idx = io_s1_paddr[untagBits - 1:`blockOffBits];
-      logic [tagBits-1:0] s1_tag = io_s1_paddr[tagBits + untagBits - 1:untagBits];
-      logic [$clog2(nWays) +idxBits-1:0] s1_vb_index = {i, s1_idx};
-      logic s1_vb = vb_array[s1_vb_index];
-      logic [tagBits-1:0] tag = tag_rdata[i];
-      assign s1_tag_hit[i] = s1_vb && tag == s1_tag;
+      assign s1_tag_hit[i] = (vb_array[{i, s1_idx}] && tag_rdata[i] == s1_tag);
     end
   endgenerate
 
 
   function logic [idxBits + $clog2(refillCycles)-1:0] b0Row(logic [`paddrBits-1:0] addr);
-    return addr[untagBits - 1:`blockOffBits - log2Ceil(refillCycles)] + addr[$clog2(`bankBytes)];
+    return addr[untagBits - 1:`blockOffBits - $clog2(refillCycles)] + addr[$clog2(`bankBytes)];
   endfunction
 
   function logic [idxBits + $clog2(refillCycles)-1:0] b1Row(logic [`paddrBits-1:0] addr);
 
-    return addr[untagBits - 1:`blockOffBits - $clog2(refillCycles) + 1];
+    return addr[untagBits - 1:`blockOffBits - $clog2(refillCycles)];
   endfunction
 
-  logic [wordBits-1:0] bank0_data_out[nWays-1:0];
-  logic [wordBits-1:0] bank1_data_out[nWays-1:0];
+  logic [wordBits/2-1:0] bank0_data_out[nWays-1:0];
+  logic [wordBits/2-1:0] bank1_data_out[nWays-1:0];
+  logic [wordBits/2-1:0] bank0_data_in;
+  logic [wordBits/2-1:0] bank1_data_in;
   logic s0_ren;
   logic [nWays-1:0] data_wen;
 
@@ -339,8 +307,10 @@ module ICacheModule (
   logic [idxBits + $clog2(refillCycles)-1:0] mem_idx1;
   logic [nWays-1:0] data_ren;
 
-  assign data_ren = !data_wen && s0_ren;
-  assign s0_wen = s0_valid;
+  assign s0_ren = s0_valid;
+  assign bank0_data_in = io_auto_d.bits.data[wordBits/2-1:0];
+  assign bank1_data_in = io_auto_d.bits.data[wordBits-1:wordBits/2];
+  
 
 
   assign mem_idx0 =
@@ -354,39 +324,42 @@ module ICacheModule (
       assign data_ren[i] = !data_wen[i] && s0_ren;
 
 
-      SyncReadMem #(
+      SyncReadMemNoVec #(
           .DEEPTH(nSets * refillCycles),
-          .DATA_WIDTH(wordBits),
-          .WMASK_WIDTH(1)
+          .DATA_WIDTH(wordBits / 2)
       ) data_array0 (
           .clk  (clock),
+          .reset(reset),
           .wen  (data_wen[i]),
           .waddr(mem_idx0),
-          .cs   (repl_way_1H[i]),
-          .wdata(io_auto_d.bits.data),
+          .wdata(bank0_data_in),
 
           .ren  (data_ren[i]),
           .raddr(mem_idx0),
           .rdata(bank0_data_out[i])
       );
 
-      SyncReadMem #(
+      SyncReadMemNoVec #(
           .DEEPTH(nSets * refillCycles),
-          .DATA_WIDTH(wordBits),
-          .WMASK_WIDTH(1)
+          .DATA_WIDTH(wordBits / 2)
       ) data_array1 (
           .clk  (clock),
+          .reset(reset),
           .wen  (data_wen[i]),
           .waddr(mem_idx1),
-          .cs   (repl_way_1H[i]),
-          .wdata(io_auto_d.bits.data),
+          .wdata(bank1_data_in),
 
           .ren  (data_ren[i]),
           .raddr(mem_idx1),
           .rdata(bank1_data_out[i])
       );
-
-      assign s2_dout[i] = {bank1_data_out[i], bank0_data_out[i]};
+      always_ff @(posedge clock or posedge reset) begin
+        if (reset)begin
+          s2_dout[i] <= 0;
+        end else begin
+          s2_dout[i] <= {bank1_data_out[i], bank0_data_out[i]}; //打一拍
+        end
+      end
     end
   endgenerate
 
@@ -399,6 +372,7 @@ module ICacheModule (
     if (reset) begin
       s2_tag_hit <= 0;
       s2_bankid <= 0;
+      s1_bankid <=0;
 
     end else begin
       s1_bankid <= s0_vaddr[$clog2(`bankBytes)];
@@ -415,7 +389,7 @@ module ICacheModule (
 
 
   always_comb begin
-
+    s2_way_mux = 0;
     for (int i = 0; i < nWays; i++) begin
       s2_way_mux = s2_tag_hit[i] ? s2_dout[i] : s2_way_mux;
     end
@@ -432,12 +406,12 @@ module ICacheModule (
     io_resp.bits.data = s2_data;
     io_resp.valid = s2_valid && s2_hit;
 
-    io_auto_a.valid = s2_miss && !refill_valid && io_s2_kill;
-    io_auto_a.bits = Get(
+    io_auto_a.valid = s2_miss && !refill_valid && !io_s2_kill;
+    io_auto_a.bits = Edge::GetA(
     .fromSource(0),
     .toAddress((refill_paddr >> `blockOffBits) << `blockOffBits),
     .lgSize(lgCacheBlockBytes)
-    );
+    );  //得到refill_paddr的地址返回
     io_perf_acquire = io_auto_a_fire;
   end
 endmodule

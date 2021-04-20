@@ -6,8 +6,7 @@ package Edge;
 
   //need to compile
   function logic [BundleParam::dataBits/8-1:0] mask(
-      logic [BundleParam::addressBits-1:0] toAddress,
-      logic [BundleParam::sizeBits-1:0] lgsize);
+      logic [BundleParam::addressBits-1:0] toAddress, [BundleParam::sizeBits-1:0] lgsize);
 
     return 0;
   endfunction
@@ -20,7 +19,8 @@ package Edge;
 
   //need to comp
   function logic hasDataD(BundleST::TLBundleDST x);
-    logic opdata = x.opcode[0];
+    logic opdata;
+    opdata = x.opcode[0];
 
     return opdata;
   endfunction
@@ -103,9 +103,10 @@ package Edge;
     return GrantAck(d.sink);
   endfunction
 
-  function BundleST::TLBundleAST Get(logic [BundleParam::sourceBits-1:0] fromSource,
-                                     logic [BundleParam::addressBits-1:0] toAddress,
-                                     logic [BundleParam::sizeBits-1:0] lgSize);
+
+  function BundleST::TLBundleAST GetA(logic [BundleParam::sourceBits-1:0] fromSource,
+                                      logic [BundleParam::addressBits-1:0] toAddress,
+                                      logic [BundleParam::sizeBits-1:0] lgSize);
     BundleST::TLBundleAST a;
     a.opcode = TLMessages::Get;
     a.param = 0;
@@ -117,5 +118,5 @@ package Edge;
     a.corrupt = 0;
     return a;
   endfunction
-
 endpackage
+

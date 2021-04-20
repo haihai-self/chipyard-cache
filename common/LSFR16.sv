@@ -227,3 +227,74 @@ end // initial
 `endif
 `endif // SYNTHESIS
 endmodule
+
+
+module LFSR16 (
+    input         clock,
+    input         reset,
+    input         increment,
+    output [15:0] data_out
+);
+  //assign val repl_way = if (isDM) 0.U else LFSR(16, refill_fire)(log2Ceil(nWays)-1,0)
+  wire  repl_way_prng_io_out_0; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_1; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_2; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_3; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_4; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_5; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_6; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_7; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_8; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_9; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_10; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_11; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_12; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_13; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_14; // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+  wire  repl_way_prng_io_out_15;
+
+  MaxPeriodFibonacciLFSR_1
+      repl_way_prng (  // @[PRNG.scala 82:22 chipyard.TestHarness.LargeBoomConfig.fir 176693:4]
+      .clock       (clock),
+      .reset       (reset),
+      .io_increment(increment),
+      .io_out_0    (repl_way_prng_io_out_0),
+      .io_out_1    (repl_way_prng_io_out_1),
+      .io_out_2    (repl_way_prng_io_out_2),
+      .io_out_3    (repl_way_prng_io_out_3),
+      .io_out_4    (repl_way_prng_io_out_4),
+      .io_out_5    (repl_way_prng_io_out_5),
+      .io_out_6    (repl_way_prng_io_out_6),
+      .io_out_7    (repl_way_prng_io_out_7),
+      .io_out_8    (repl_way_prng_io_out_8),
+      .io_out_9    (repl_way_prng_io_out_9),
+      .io_out_10   (repl_way_prng_io_out_10),
+      .io_out_11   (repl_way_prng_io_out_11),
+      .io_out_12   (repl_way_prng_io_out_12),
+      .io_out_13   (repl_way_prng_io_out_13),
+      .io_out_14   (repl_way_prng_io_out_14),
+      .io_out_15   (repl_way_prng_io_out_15)
+  );
+  wire [7:0] repl_way_lo = {
+    repl_way_prng_io_out_7,
+    repl_way_prng_io_out_6,
+    repl_way_prng_io_out_5,
+    repl_way_prng_io_out_4,
+    repl_way_prng_io_out_3,
+    repl_way_prng_io_out_2,
+    repl_way_prng_io_out_1,
+    repl_way_prng_io_out_0
+  };  // @[PRNG.scala 86:17 chipyard.TestHarness.LargeBoomConfig.fir 176720:4]
+  wire [15:0] _repl_way_T = {
+    repl_way_prng_io_out_15,
+    repl_way_prng_io_out_14,
+    repl_way_prng_io_out_13,
+    repl_way_prng_io_out_12,
+    repl_way_prng_io_out_11,
+    repl_way_prng_io_out_10,
+    repl_way_prng_io_out_9,
+    repl_way_prng_io_out_8,
+    repl_way_lo
+  };  // @[PRNG.scala 86:17 chipyard.TestHarness.LargeBoomConfig.fir 176728:4]
+  assign data_out = _repl_way_T;
+endmodule

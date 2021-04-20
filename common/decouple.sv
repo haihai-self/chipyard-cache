@@ -4,12 +4,12 @@ interface DecoupledIF #(
 );
   logic valid, ready;
   T bits;
-  modport in(  //decouple
+  modport out(  //decouple
       input ready,
       output valid, bits
   );
 
-  modport out(  //decouple fliped
+  modport in(  //decouple fliped
       input valid, bits,
       output ready
   );

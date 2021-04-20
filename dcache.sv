@@ -1148,71 +1148,71 @@ module BoomNonBlockingDCache( // @[chipyard.TestHarness.LargeBoomConfig.fir 1721
   
 
 
-  DecoupledIF #(.T(NBDcacheST::WriteBackReqST)) wb_io_req();
-  DecoupledIF #(.T(HellaCacheST::L1MetaReadReqST)) wb_io_meta_read();
-  ValidIF #(.bits_size(6)) wb_io_idx();
-  DecoupledIF #(.T(NBDcacheST::L1DataReadReqST)) wb_io_data_req();
-  DecoupledIF #(.T(BundleST::TLBundleCST)) wb_io_release();
-  DecoupledIF #(.T(BundleST::TLBundleCST)) wb_io_lsu_release();
+  // DecoupledIF #(.T(NBDcacheST::WriteBackReqST)) wb_io_req();
+  // DecoupledIF #(.T(HellaCacheST::L1MetaReadReqST)) wb_io_meta_read();
+  // ValidIF #(.bits_size(6)) wb_io_idx();
+  // DecoupledIF #(.T(NBDcacheST::L1DataReadReqST)) wb_io_data_req();
+  // DecoupledIF #(.T(BundleST::TLBundleCST)) wb_io_release();
+  // DecoupledIF #(.T(BundleST::TLBundleCST)) wb_io_lsu_release();
 
-  NBDcacheST::WriteBackReqST wb_io_req_bits_st;
-  NBDcacheST::L1DataReadReqST wb_io_data_req_bits_st;
-  HellaCacheST::L1MetaReadReqST wb_io_meta_read_bits_st;
-  BundleST::TLBundleCST wb_io_release_bits_st;
-  BundleST::TLBundleCST wb_io_lsu_release_bits_st;
+  // NBDcacheST::WriteBackReqST wb_io_req_bits_st;
+  // NBDcacheST::L1DataReadReqST wb_io_data_req_bits_st;
+  // HellaCacheST::L1MetaReadReqST wb_io_meta_read_bits_st;
+  // BundleST::TLBundleCST wb_io_release_bits_st;
+  // BundleST::TLBundleCST wb_io_lsu_release_bits_st;
 
-  assign wb_io_req_bits_st.tag = wb_io_req_bits_tag;
-  assign wb_io_req_bits_st.idx = wb_io_req_bits_idx;
-  assign wb_io_req_bits_st.param = wb_io_req_bits_param;
-  assign wb_io_req_bits_st.way_en = wb_io_req_bits_way_en;
-  assign wb_io_req_bits_st.voluntary = wb_io_req_bits_voluntary;
-  assign wb_io_req_ready = wb_io_req.ready;
-  assign wb_io_req.valid = wb_io_req_valid;
-  assign wb_io_req.bits = wb_io_req_bits_st;
+  // assign wb_io_req_bits_st.tag = wb_io_req_bits_tag;
+  // assign wb_io_req_bits_st.idx = wb_io_req_bits_idx;
+  // assign wb_io_req_bits_st.param = wb_io_req_bits_param;
+  // assign wb_io_req_bits_st.way_en = wb_io_req_bits_way_en;
+  // assign wb_io_req_bits_st.voluntary = wb_io_req_bits_voluntary;
+  // assign wb_io_req_ready = wb_io_req.ready;
+  // assign wb_io_req.valid = wb_io_req_valid;
+  // assign wb_io_req.bits = wb_io_req_bits_st;
 
-  assign wb_io_meta_read_bits_idx = wb_io_meta_read_bits_st.idx;
-  assign wb_io_meta_read_bits_tag = wb_io_meta_read_bits_st.tag;
-  assign wb_io_meta_read.ready = wb_io_meta_read_ready;
-  assign wb_io_meta_read_valid = wb_io_meta_read.valid;
-  assign wb_io_meta_read_bits_st = wb_io_meta_read.bits;
-
-
-  assign wb_io_idx_valid = wb_io_idx.valid;
-  assign wb_io_idx_bits = wb_io_idx.bits;
+  // assign wb_io_meta_read_bits_idx = wb_io_meta_read_bits_st.idx;
+  // assign wb_io_meta_read_bits_tag = wb_io_meta_read_bits_st.tag;
+  // assign wb_io_meta_read.ready = wb_io_meta_read_ready;
+  // assign wb_io_meta_read_valid = wb_io_meta_read.valid;
+  // assign wb_io_meta_read_bits_st = wb_io_meta_read.bits;
 
 
-  assign wb_io_data_req_bits_way_en = wb_io_data_req_bits_st.way_en;
-  assign wb_io_data_req_bits_addr = wb_io_data_req_bits_st.addr;
-  assign wb_io_data_req.ready = wb_io_data_req_ready;
-  assign wb_io_data_req_valid = wb_io_data_req.valid;
-  assign wb_io_data_req_bits_st = wb_io_data_req.bits;
+  // assign wb_io_idx_valid = wb_io_idx.valid;
+  // assign wb_io_idx_bits = wb_io_idx.bits;
 
-  assign wb_io_release_bits_opcode = wb_io_release_bits_st.opcode;
-  assign wb_io_release_bits_param = wb_io_release_bits_st.param;
-  assign wb_io_release_bits_address = wb_io_release_bits_st.address;
-  assign wb_io_release_bits_data = wb_io_release_bits_st.data;
-  assign wb_io_release.ready = wb_io_release_ready;
-  assign wb_io_release_valid = wb_io_release.valid;
-  assign wb_io_release_bits_st = wb_io_release.bits;
 
-  assign wb_io_lsu_release_bits_address = wb_io_lsu_release_bits_st.address;
-  assign wb_io_lsu_release.ready = wb_io_lsu_release_ready;
-  assign wb_io_lsu_release_valid = wb_io_lsu_release.valid;
-  assign wb_io_lsu_release_bits_st = wb_io_lsu_release.bits;
+  // assign wb_io_data_req_bits_way_en = wb_io_data_req_bits_st.way_en;
+  // assign wb_io_data_req_bits_addr = wb_io_data_req_bits_st.addr;
+  // assign wb_io_data_req.ready = wb_io_data_req_ready;
+  // assign wb_io_data_req_valid = wb_io_data_req.valid;
+  // assign wb_io_data_req_bits_st = wb_io_data_req.bits;
 
-  BoomWriteBackUnit wb(
-    .clock(wb_clock),
-    .reset(wb_reset),
-    .io_req(wb_io_req),
-    .io_meta_read(wb_io_meta_read),
-    .io_resp(wb_io_resp),
-    .io_idx(wb_io_idx),
-    .io_data_req(wb_io_data_req),
-    .io_data_resp(wb_io_data_resp),
-    .io_mem_grant(wb_io_mem_grant),
-    .io_release(wb_io_release),
-    .io_lsu_release(wb_io_lsu_release)
-  );
+  // assign wb_io_release_bits_opcode = wb_io_release_bits_st.opcode;
+  // assign wb_io_release_bits_param = wb_io_release_bits_st.param;
+  // assign wb_io_release_bits_address = wb_io_release_bits_st.address;
+  // assign wb_io_release_bits_data = wb_io_release_bits_st.data;
+  // assign wb_io_release.ready = wb_io_release_ready;
+  // assign wb_io_release_valid = wb_io_release.valid;
+  // assign wb_io_release_bits_st = wb_io_release.bits;
+
+  // assign wb_io_lsu_release_bits_address = wb_io_lsu_release_bits_st.address;
+  // assign wb_io_lsu_release.ready = wb_io_lsu_release_ready;
+  // assign wb_io_lsu_release_valid = wb_io_lsu_release.valid;
+  // assign wb_io_lsu_release_bits_st = wb_io_lsu_release.bits;
+
+  // BoomWriteBackUnit wb(
+  //   .clock(wb_clock),
+  //   .reset(wb_reset),
+  //   .io_req(wb_io_req),
+  //   .io_meta_read(wb_io_meta_read),
+  //   .io_resp(wb_io_resp),
+  //   .io_idx(wb_io_idx),
+  //   .io_data_req(wb_io_data_req),
+  //   .io_data_resp(wb_io_data_resp),
+  //   .io_mem_grant(wb_io_mem_grant),
+  //   .io_release(wb_io_release),
+  //   .io_lsu_release(wb_io_lsu_release)
+  // );
 
 
   DecoupledIF #(.T(BundleST::TLBundleBST)) prober_io_req();
@@ -1295,49 +1295,40 @@ module BoomNonBlockingDCache( // @[chipyard.TestHarness.LargeBoomConfig.fir 1721
     .io_state(prober_io_state)
   );
 
-  // BoomProbeUnit prober ( // @[dcache.scala 431:22 chipyard.TestHarness.LargeBoomConfig.fir 172141:4]
-  //   .clock(prober_clock),
-  //   .reset(prober_reset),
-  //   .io_req_ready(prober_io_req_ready),
-  //   .io_req_valid(prober_io_req_valid),
-  //   .io_req_bits_param(prober_io_req_bits_param),
-  //   .io_req_bits_size(prober_io_req_bits_size),
-  //   .io_req_bits_source(prober_io_req_bits_source),
-  //   .io_req_bits_address(prober_io_req_bits_address),
-  //   .io_rep_ready(prober_io_rep_ready),
-  //   .io_rep_valid(prober_io_rep_valid),
-  //   .io_rep_bits_opcode(prober_io_rep_bits_opcode),
-  //   .io_rep_bits_param(prober_io_rep_bits_param),
-  //   .io_rep_bits_size(prober_io_rep_bits_size),
-  //   .io_rep_bits_source(prober_io_rep_bits_source),
-  //   .io_rep_bits_address(prober_io_rep_bits_address),
-  //   .io_meta_read_ready(prober_io_meta_read_ready),
-  //   .io_meta_read_valid(prober_io_meta_read_valid),
-  //   .io_meta_read_bits_idx(prober_io_meta_read_bits_idx),
-  //   .io_meta_read_bits_tag(prober_io_meta_read_bits_tag),
-  //   .io_meta_write_ready(prober_io_meta_write_ready),
-  //   .io_meta_write_valid(prober_io_meta_write_valid),
-  //   .io_meta_write_bits_idx(prober_io_meta_write_bits_idx),
-  //   .io_meta_write_bits_way_en(prober_io_meta_write_bits_way_en),
-  //   .io_meta_write_bits_data_coh_state(prober_io_meta_write_bits_data_coh_state),
-  //   .io_meta_write_bits_data_tag(prober_io_meta_write_bits_data_tag),
-  //   .io_wb_req_ready(prober_io_wb_req_ready),
-  //   .io_wb_req_valid(prober_io_wb_req_valid),
-  //   .io_wb_req_bits_tag(prober_io_wb_req_bits_tag),
-  //   .io_wb_req_bits_idx(prober_io_wb_req_bits_idx),
-  //   .io_wb_req_bits_param(prober_io_wb_req_bits_param),
-  //   .io_wb_req_bits_way_en(prober_io_wb_req_bits_way_en),
-  //   .io_way_en(prober_io_way_en),
-  //   .io_wb_rdy(prober_io_wb_rdy),
-  //   .io_mshr_rdy(prober_io_mshr_rdy),
-  //   .io_mshr_wb_rdy(prober_io_mshr_wb_rdy),
-  //   .io_block_state_state(prober_io_block_state_state),
-  //   .io_lsu_release_ready(prober_io_lsu_release_ready),
-  //   .io_lsu_release_valid(prober_io_lsu_release_valid),
-  //   .io_lsu_release_bits_address(prober_io_lsu_release_bits_address),
-  //   .io_state_valid(prober_io_state_valid),
-  //   .io_state_bits(prober_io_state_bits)
-  // );
+//  BoomWritebackUnit wb ( // @[dcache.scala 430:18 chipyard.TestHarness.LargeBoomConfig.fir 172138:4]
+//     .clock(wb_clock),
+//     .reset(wb_reset),
+//     .io_req_ready(wb_io_req_ready),
+//     .io_req_valid(wb_io_req_valid),
+//     .io_req_bits_tag(wb_io_req_bits_tag),
+//     .io_req_bits_idx(wb_io_req_bits_idx),
+//     .io_req_bits_param(wb_io_req_bits_param),
+//     .io_req_bits_way_en(wb_io_req_bits_way_en),
+//     .io_req_bits_voluntary(wb_io_req_bits_voluntary),
+//     .io_meta_read_ready(wb_io_meta_read_ready),
+//     .io_meta_read_valid(wb_io_meta_read_valid),
+//     .io_meta_read_bits_idx(wb_io_meta_read_bits_idx),
+//     .io_meta_read_bits_tag(wb_io_meta_read_bits_tag),
+//     .io_resp(wb_io_resp),
+//     .io_idx_valid(wb_io_idx_valid),
+//     .io_idx_bits(wb_io_idx_bits),
+//     .io_data_req_ready(wb_io_data_req_ready),
+//     .io_data_req_valid(wb_io_data_req_valid),
+//     .io_data_req_bits_way_en(wb_io_data_req_bits_way_en),
+//     .io_data_req_bits_addr(wb_io_data_req_bits_addr),
+//     .io_data_resp(wb_io_data_resp),
+//     .io_mem_grant(wb_io_mem_grant),
+//     .io_release_ready(wb_io_release_ready),
+//     .io_release_valid(wb_io_release_valid),
+//     .io_release_bits_opcode(wb_io_release_bits_opcode),
+//     .io_release_bits_param(wb_io_release_bits_param),
+//     .io_release_bits_address(wb_io_release_bits_address),
+//     .io_release_bits_data(wb_io_release_bits_data),
+//     .io_lsu_release_ready(wb_io_lsu_release_ready),
+//     .io_lsu_release_valid(wb_io_lsu_release_valid),
+//     .io_lsu_release_bits_address(wb_io_lsu_release_bits_address)
+//   );
+
   BoomMSHRFile mshrs ( // @[dcache.scala 432:21 chipyard.TestHarness.LargeBoomConfig.fir 172144:4]
     .clock(mshrs_clock),
     .reset(mshrs_reset),

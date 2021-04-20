@@ -14,19 +14,19 @@ module BoomMSHRFile (
 
     input ExuST::BrUpdateInfoST io_brupdate,
 
-    ValidIF.in   io_prober_state,  //coreMaxAddrBits
-    ValidSTIF.in io_meta_resp,  // L1Metadata
-    Decouple.out io_req,  // BoomDCacheReqInternal
-    Decouple.in  io_resp,  // BoomDCacheResp
-    Decouple.in  io_mem_acquire,  // TLBundleA
-    Decouple.out io_mem_grant,  // TLBundleD
-    Decouple.in  io_mem_finish,  // TLBundleE
-    Decouple.in  io_refill,  // L1DataWriteReq
-    Decouple.in  io_meta_write,  // L1MetaWriteReq
-    Decouple.in  io_meta_read,  // L1MetaReadReq
-    Decouple.in  io_replay,  // BoomDCacheReqInternal
-    Decouple.in  io_prefetch,  // BoomDCacheReq
-    Decouple.in  io_wb_req  // WritebackReq
+    ValidIF.out   io_prober_state,  //coreMaxAddrBits
+    ValidSTIF.out io_meta_resp,  // L1Metadata
+    Decouple.in io_req,  // BoomDCacheReqInternal
+    Decouple.out  io_resp,  // BoomDCacheResp
+    Decouple.out  io_mem_acquire,  // TLBundleA
+    Decouple.in io_mem_grant,  // TLBundleD
+    Decouple.out  io_mem_finish,  // TLBundleE
+    Decouple.out  io_refill,  // L1DataWriteReq
+    Decouple.out  io_meta_write,  // L1MetaWriteReq
+    Decouple.out  io_meta_read,  // L1MetaReadReq
+    Decouple.out  io_replay,  // BoomDCacheReqInternal
+    Decouple.out  io_prefetch,  // BoomDCacheReq
+    Decouple.out  io_wb_req  // WritebackReq
 );
   logic io_replay_fire;
 

@@ -3,10 +3,10 @@ module Mux1Hlogic #(
     parameter n = 4,
     parameter width = 32
 ) (
-    logic [n-1:0] select,
+    input logic [n-1:0] select,
 
-    logic [width-1:0] in [n],
-    logic [width-1:0] out
+    input logic [width-1:0] in [n],
+    output logic [width-1:0] out
 );
 
   always_comb begin
@@ -21,12 +21,12 @@ endmodule
 
 module Mux1HST #(
     parameter n = 4,
-    type T
+    type T = BundleST::TLBundleAST
 ) (
-    logic [n-1:0] select,
+    input logic [n-1:0] select,
 
-    T in [n],
-    T out
+    input T in [n],
+    output T out
 );
 
   always_comb begin
