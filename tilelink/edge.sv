@@ -42,14 +42,14 @@ package Edge;
     return a;
   endfunction
 
-  function BundleST::TLBundleCST Release(logic [BundleParam::sourceBits-1:0] fromSource,
+  function BundleST::TLBundleCST Release_data(logic [BundleParam::sourceBits-1:0] fromSource,
                                          logic [BundleParam::addressBits-1:0] toAddress,
                                          logic [BundleParam::sizeBits-1:0] lgSize,
                                          logic [BundleParam::cwidth-1:0] shrinkPermissions,
                                          logic [BundleParam::dataBits-1:0] data,
                                          logic corrupt = 0);
     BundleST::TLBundleCST c;
-    c.opcode = TLMessages::Release;
+    c.opcode = TLMessages::ReleaseData;
     c.param = shrinkPermissions;
     c.size = lgSize;
     c.source = fromSource;
@@ -60,9 +60,33 @@ package Edge;
 
   endfunction
 
-
-
   function BundleST::TLBundleCST ProbeAck(logic [BundleParam::sourceBits-1:0] fromSource,
+                                          logic [BundleParam::addressBits-1:0] toAddress,
+                                          logic [BundleParam::sizeBits-1:0] lgSize,
+                                          logic [BundleParam::cwidth-1:0] reportPermissions
+                                          );
+    BundleST::TLBundleCST c;
+    c.opcode = TLMessages::ProbeAck;
+    c.param = reportPermissions;
+    c.size = lgSize;
+    c.source = fromSource;
+    c.address = toAddress;
+    c.data = 0;
+    c.corrupt = 0;
+    return c;
+  endfunction
+
+  function BundleST::TLBundleCST ProbeAckST(BundleST::TLBundleBST b,
+                                            logic [BundleParam::cwidth-1:0] reportPermissions);
+    return ProbeAck(
+    .fromSource(b.source),
+    .toAddress(b.address),
+    .lgSize(b.size),
+    .reportPermissions(reportPermissions)
+    );
+  endfunction
+
+  function BundleST::TLBundleCST ProbeAck_data(logic [BundleParam::sourceBits-1:0] fromSource,
                                           logic [BundleParam::addressBits-1:0] toAddress,
                                           logic [BundleParam::sizeBits-1:0] lgSize,
                                           logic [BundleParam::cwidth-1:0] reportPermissions,
@@ -79,9 +103,9 @@ package Edge;
     return c;
   endfunction
 
-  function BundleST::TLBundleCST ProbeAckST(BundleST::TLBundleBST b,
+  function BundleST::TLBundleCST ProbeAck_data_ST(BundleST::TLBundleBST b,
                                             logic [BundleParam::cwidth-1:0] reportPermissions);
-    return ProbeAck(
+    return ProbeAck_data(
     .fromSource(b.source),
     .toAddress(b.address),
     .lgSize(b.size),
