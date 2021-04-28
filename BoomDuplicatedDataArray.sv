@@ -6,8 +6,8 @@ module BoomDuplicatedDataArray(
   input logic clock,
   input logic reset,
 
-  input NBDcacheST::L1DataReadReqST io_read,
-  input NBDcacheST::L1DataWriteReqST io_write,
+  DecoupledIF.in io_read, // NBDcacheST::L1DataReadReqST 
+  DecoupledIF.in io_write, //NBDcacheST::L1DataWriteReqST
 
   output logic [HasL1HellaCacheParameters::encRowBits-1:0] io_resp [HasL1CacheParameters::nWays],
   output logic io_nack

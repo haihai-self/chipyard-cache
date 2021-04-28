@@ -1,3 +1,8 @@
+typedef struct packed {
+  NBDcacheST::L1DataReadReqST req;
+  logic valid;
+} BoomL1DataReadReqST;
+
 module BoomNonBlockingDCache( // @[chipyard.TestHarness.LargeBoomConfig.fir 172125:2]
   input          clock, // @[chipyard.TestHarness.LargeBoomConfig.fir 172126:4]
   input          reset, // @[chipyard.TestHarness.LargeBoomConfig.fir 172127:4]
@@ -489,17 +494,17 @@ module DcacheModule (
   // 0 goes to MSHR replays, 1 goes to wb, 2 goes to pipeline
   logic [2:0] dataReadArb_io_in_valid;
   logic [2:0] dataReadArb_io_in_ready;
-  NBDcacheST::L1DataWriteReqST dataReadArb_io_in[3];
+  BoomL1DataReadReqST dataReadArb_io_in[3];
 
   logic dataReadArb_io_out_ready;
   logic dataReadArb_io_out_valid;
-  NBDcacheST::L1DataWriteReqST dataReadArb_io_out;
+  BoomL1DataReadReqST dataReadArb_io_out;
   
   logic dataReadArb_io_chosen;
   logic dataReadArb_io_out_fire;
   Arbiter #(
     .n(3),
-    .T(NBDcacheST::L1DataWriteReqST)
+    .T(BoomL1DataReadReqST)
   ) dataReadArb(
     .io_in_ready(dataReadArb_io_out_ready),
     .io_in_valid(dataReadArb_io_in_valid),
@@ -530,4 +535,137 @@ module DcacheModule (
   end
 
 
+  // ------------
+  // New requests
+  
+  always_comb begin
+    io_lsu_req.ready = metaReadArb_io_in_ready[4] && dataReadArb_io_in_ready[2];
+    metaReadArb_io_in_valid[4] = io_lsu_req.valid;
+    dataReadArb_io_in_valid[2] = io_lsu_req.valid;
+
+    // Tag read for new requests
+    metaReadArb_io_in[4].idx = io_lsu_req.bits.addr >> `blockOffBits;
+    metaReadArb_io_in[4].way_en = 0;
+    metaReadArb_io_in[4].tag = 0;
+
+    // Data read for new requests
+    dataReadArb_io_in[2].valid = io_lsu_req.valid;
+    dataReadArb_io_in[2].req.addr = io_lsu_req.bits.addr >> `blockOffBits;
+    dataReadArb_io_in[2].req.way_en = 8'hff;
+  end
+
+
+  // ------------
+  // // MSHR Replays
+  BoomLSUST::BoomDCacheReqST replay_req;
+
+  always_comb begin
+    replay_req = 0;
+    replay_req.uop = mshr_io_replay.bits.uop;
+    replay_req.addr = mshr_io_replay.bits.addr;
+    replay_req.data = mshr_io_replay.bits.data;
+    replay_req.is_hella = mshr_io_replay.bits.is_hella;
+    mshr_io_replay.ready = metaReadArb_io_in_ready[0] && dataReadArb_io_in_ready[0];
+    // Tag read for MSHR replays
+    // We don't actually need to read the metadata, for replays we already know our way
+    metaReadArb_io_in_valid[0] = mshr_io_replay.valid;
+    metaReadArb_io_in[0].idx = mshr_io_replay.bits.addr >> `blockOffBits;
+    metaReadArb_io_in[0].way_en = 0;
+    metaReadArb_io_in[0].tag = 0;
+    // Data read for MSHR replays
+    dataReadArb_io_in_valid[0] = mshr_io_replay.valid;
+    dataReadArb_io_in[0].req.addr = mshr_io_replay.bits.addr >> `blockOffBits;
+    dataReadArb_io_in[0].req.way_en = mshr_io_replay.bits.way_en;
+    dataReadArb_io_in[0].req.valid = 0;
+  end
+
+  // -----------
+  // MSHR Meta read
+  BoomLSUST::BoomDCacheReqST mshr_read_req;
+
+  always_comb begin
+    mshr_read_req = 0;
+    mshr_read_req.uop = 0;
+    mshr_read_req.addr = {mshr_io_meta_read.bits.tag, mshr_io_meta_read.bits.idx} << `blockOffBits;
+    mshr_read_req.data = 0;
+    mshr_read_req.is_hella = 0;
+
+    metaReadArb_io_in_valid[3] = mshr_io_meta_read.valid;
+    metaReadArb_io_in[3] = mshr_io_meta_read.bits;
+    mshr_io_meta_read.ready = metaReadArb_io_in_ready[3];
+  end
+
+
+  // -----------
+  // Write-backs
+  logic wb_fire;
+  BoomLSUST::BoomDCacheReqST wb_req;
+  logic wb_io_data_req_fire;
+  logic wb_io_meta_read_fire;
+  always_comb begin
+    wb_io_meta_read_fire = wb_io_meta_read.valid && wb_io_meta_read.ready;
+    wb_io_data_req_fire = wb_io_data_req.valid && wb_io_data_req.ready;
+    wb_fire = wb_io_meta_read_fire && wb_io_data_req_fire;
+    wb_req = 0;
+    wb_req.uop = 0;
+    wb_req.addr = {wb_io_meta_read.bits.tag, wb_io_data_req.bits.addr};
+    wb_req.data = 0;
+    wb_req.is_hella = 0;
+    // Couple the two decoupled interfaces of the WBUnit's meta_read and data_read
+    // Tag read for write-back
+    metaReadArb_io_in_valid[2] = wb_io_meta_read.valid;
+    metaReadArb_io_in.req = wb_io_meta_read.bits;
+    wb_io_meta_read.ready = metaReadArb_io_in_ready[2] && dataReadArb_io_in_ready[2];
+    // Data read for write-back
+    dataReadArb_io_in_valid[1] = wb_io_data_req.valid;
+    dataReadArb_io_in[1].req = wb_io_data_req.bits;
+    dataReadArb_io_in[1].valid = 0;
+    wb_io_data_req.ready = metaReadArb_io_in_ready[2] && dataReadArb_io_in_ready[1];
+  end
+  
+  // -------
+  // Prober
+  logic prober_io_meta_read_fire;
+  logic prober_fire;
+
+  BoomLSUST::BoomDCacheReqST prober_req;
+
+  always_comb begin
+    prober_io_meta_read_fire = prober_io_meta_read.valid && prober_io_meta_read.ready;
+    prober_fire = prober_io_meta_read_fire;
+
+    prober_req = 0;
+    prober_req.uop = 0;
+    prober_req.addr = {prober_io_meta_read.bits.tag, prober_io_meta_read.bits.idx} << `blockOffBits;
+    prober_req.data = 0;
+    prober_req.is_hella = 0;
+    // Tag read for prober
+    metaReadArb_io_in_valid[1] = prober_io_meta_read.valid;
+    metaReadArb_io_in[1] = prober_io_meta_read.bits;
+    prober_io_meta_read.ready = metaReadArb_io_in_ready[1];
+
+
+  end
+  // Prober does not need to read data array
+
+  // -------
+  // Prefetcher
+  logic mshr_io_prefetch_fire;
+  logic prefetch_fire;
+  BoomLSUST::BoomDCacheReqST prefetch_req;
+  always_comb begin
+    mshr_io_prefetch_fire = mshr_io_prefetch.valid && mshr_io_prefetch.ready;
+    prefetch_fire = mshr_io_prefetch_fire;
+
+    prefetch_req = mshr_io_prefetch.bits;
+
+    // Tag read for prefetch
+    metaReadArb_io_in_valid[5] = mshr_io_prefetch.valid;
+    metaReadArb_io_in[5].idx = mshr_io_prefetch.bits.addr >> `blockOffBits;
+    metaReadArb_io_in[5].way_en = 0;
+    metaReadArb_io_in[5].tag = 0;
+    mshr_io_prefetch.ready = metaReadArb_io_in[5].ready;
+    // Prefetch does not need to read data array
+
+  end
 endmodule
