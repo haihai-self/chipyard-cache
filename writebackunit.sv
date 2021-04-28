@@ -8,7 +8,7 @@ module BoomWriteBackUnit (
     input  logic                                               io_mem_grant,
     output logic                                               io_resp,  //encRowBits
 
-    ValidIF.out io_idx,  //
+    ValidIF.out io_idx,  //6
 
     DecoupledIF.in  io_req,  //WritebackReq
     DecoupledIF.out io_meta_read,  //L1MetaReadReq
@@ -44,7 +44,7 @@ module BoomWriteBackUnit (
   assign r_address = {req.tag, req.idx} << `blockOffBits;
 
   assign probeResponse = Edge::ProbeAck_data(
-  .fromSource(DCacheParams::nMSHRs),
+  .fromSource(4),
   .toAddress(r_address),
   .lgSize(HasL1HellaCacheParameters::lgCacheBlockBytes),
   .reportPermissions(req.param),
@@ -52,7 +52,7 @@ module BoomWriteBackUnit (
   );
 
   assign voluntaryRelease = Edge::Release_data(
-  .fromSource(DCacheParams::nMSHRs),
+  .fromSource(4),
   .toAddress(r_address),
   .lgSize(HasL1HellaCacheParameters::lgCacheBlockBytes),
   .shrinkPermissions(req.param),

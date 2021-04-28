@@ -9,13 +9,13 @@ module BoomProbeUnit (
     output logic                                        io_mshr_wb_rdy,
     input        [BundleParam::TLPermissions_width-1:0] io_block_state,
 
-    ValidIF.out     io_state,
-    DecoupledIF.in  io_req,
-    DecoupledIF.out io_rep,
-    DecoupledIF.out io_meta_read,
-    DecoupledIF.out io_meta_write,
-    DecoupledIF.out io_wb_req,
-    DecoupledIF.out io_lsu_release
+    ValidIF.out     io_state,       //coreMaxAddrBits
+    DecoupledIF.in  io_req,         //TLBundleB
+    DecoupledIF.out io_rep,         //TLBundleC
+    DecoupledIF.out io_meta_read,   //L1MetaReadReq
+    DecoupledIF.out io_meta_write,  //L1MetaWriteReq
+    DecoupledIF.out io_wb_req,      //WritebackReq
+    DecoupledIF.out io_lsu_release  //TLBundleC
 );
 
   //assign fire

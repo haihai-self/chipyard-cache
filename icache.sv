@@ -67,14 +67,14 @@ module ICache( // @[chipyard.TestHarness.LargeBoomConfig.fir 176616:2]
 endmodule
 
 module ICacheModule (
-    input logic                  clock,
-    input logic                  reset,
-    input logic [`paddrBits-1:0] io_s1_paddr,
-    input logic                  io_s1_kill,
-    input logic                  io_s2_kill,
-    input logic                  io_invalidate,
-    input logic                  io_s2_prefetch,
-    output logic io_perf_acquire,
+    input  logic                  clock,
+    input  logic                  reset,
+    input  logic [`paddrBits-1:0] io_s1_paddr,
+    input  logic                  io_s1_kill,
+    input  logic                  io_s2_kill,
+    input  logic                  io_invalidate,
+    input  logic                  io_s2_prefetch,
+    output logic                  io_perf_acquire,
 
     DecoupledIF.in io_req,  //ICacheReq
     DecoupledIF.in io_auto_d,  //TLBundleDST

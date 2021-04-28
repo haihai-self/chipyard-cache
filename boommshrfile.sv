@@ -1,26 +1,27 @@
 
 module BoomMSHRFile (
-    input  clock,
-    input  reset,
-    input  io_req_is_probe,
-    output io_secondary_miss,
-    output io_block_hit,
-    input  io_exception,
-    input  io_rob_pnr_idx,
-    input  io_clear_all,
-    input  io_wb_resp,
-    output io_fence_rdy,
-    output io_probe_rdy,
+    input  logic clock,
+    input  logic reset,
+    input  logic io_req_is_probe,
+    input  logic io_exception,
+    input  logic io_rob_pnr_idx,
+    input  logic io_clear_all,
+    input  logic io_wb_resp,
+    output logic io_block_hit,
+    output logic io_secondary_miss,
+    output logic io_fence_rdy,
+    output logic io_probe_rdy,
 
     input ExuST::BrUpdateInfoST io_brupdate,
 
     ValidIF.out   io_prober_state,  //coreMaxAddrBits
     ValidSTIF.out io_meta_resp,  // L1Metadata
+
     Decouple.in io_req,  // BoomDCacheReqInternal
-    Decouple.out  io_resp,  // BoomDCacheResp
-    Decouple.out  io_mem_acquire,  // TLBundleA
     Decouple.in io_mem_grant,  // TLBundleD
+    Decouple.out  io_mem_acquire,  // TLBundleA
     Decouple.out  io_mem_finish,  // TLBundleE
+    Decouple.out  io_resp,  // BoomDCacheResp
     Decouple.out  io_refill,  // L1DataWriteReq
     Decouple.out  io_meta_write,  // L1MetaWriteReq
     Decouple.out  io_meta_read,  // L1MetaReadReq
@@ -299,9 +300,11 @@ module BoomMSHRFile (
       .io_in_valid (replay_arb_io_in_valid),
       .io_in_ready (replay_arb_io_in_ready),
       .io_in       (replay_arb_io_in),
+
       .io_out_ready(replay_arb_io_out_ready),
       .io_out_valid(replay_arb_io_out_valid),
       .io_out      (replay_arb_io_out),
+      
       .io_chosen   (replay_arb_io_chosen)
   );
   assign replay_arb_io_out_fire = replay_arb_io_out_ready && replay_arb_io_out_valid;

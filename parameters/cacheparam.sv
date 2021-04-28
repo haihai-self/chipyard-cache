@@ -27,9 +27,9 @@ package HasL1CacheParameters;
   parameter nWays = L1CacheParams::nWays;
   parameter wayBits = $clog2(nWays);
   parameter isDM = nWays == 1;
-  parameter rowBits = L1CacheParams::rowBits;
-  parameter rowBytes = rowBits / 8;
-  parameter rowOffBits = $clog2(rowBytes);
+  parameter rowBits = L1CacheParams::rowBits; //128
+  parameter rowBytes = rowBits / 8;  //16
+  parameter rowOffBits = $clog2(rowBytes);  //4
   parameter nTLBEntries = L1CacheParams::nTLBEntries;
 
   parameter realAddressBits = `paddrBits;

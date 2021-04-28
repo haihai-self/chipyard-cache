@@ -1,4 +1,4 @@
-module BoomNonBlockingDCache( // @[chipyard.TestHarness.LargeBoomConfig.fir 172125:2]
+module bb( // @[chipyard.TestHarness.LargeBoomConfig.fir 172125:2]
   input          clock, // @[chipyard.TestHarness.LargeBoomConfig.fir 172126:4]
   input          reset, // @[chipyard.TestHarness.LargeBoomConfig.fir 172127:4]
   input          auto_out_a_ready, // @[chipyard.TestHarness.LargeBoomConfig.fir 172128:4]

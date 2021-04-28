@@ -24,6 +24,7 @@
 ./tilelink/arbiter.sv
 ./tilelink/metadata.sv
 
+./hellacache.sv
 ./icache.sv
 ./dcache.sv
 ./writebackunit.sv
@@ -33,6 +34,6 @@
 ./boommshr.sv
 ./boommshrio.sv
 ./boommshrfile.sv
-
+./boomnonblockingdcache.sv
 
 
