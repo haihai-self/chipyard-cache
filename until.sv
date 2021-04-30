@@ -1,4 +1,10 @@
 
+function automatic [`maxBrCount-1:0] getNewBrMaskST(ExuST::BrUpdateInfoST brupdate,
+                                                    Micro::MicroOpST uop);
+  return uop.br_mask & ~brupdate.b1.resolve_mask;
+endfunction
+
+
 function automatic logic isPow2(int n);
   if (n < 1) return 0;
   return (n & (n - 1)) == 0;
@@ -18,6 +24,12 @@ endfunction
 function automatic logic isKilledByBranch(ExuST::BrUpdateInfoST brupdate,
                                           logic [`maxBrCount-1:0] br_mask);
   return maskMatch(brupdate.b1.resolve_mask, br_mask);
+endfunction
+
+
+function automatic logic isKilledByBranchST(ExuST::BrUpdateInfoST brupdate,
+                                          Micro::MicroOpST uop);
+  return maskMatch(brupdate.b1.resolve_mask, uop.br_mask);
 endfunction
 
 function automatic logic flush_fn(Micro::MicroOpST uop);

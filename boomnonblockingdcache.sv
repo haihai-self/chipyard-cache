@@ -357,6 +357,15 @@ module DcacheModule (
     .io_prefetch(mshr_io_prefetch),
     .io_wb_req(mshr_io_wb_req)
   );
+  logic mshr_io_replay_fire;
+  logic mshr_io_meta_read_fire;
+  logic mshr_io_req_fire;
+  
+  always_comb begin
+    mshr_io_replay_fire = mshr_io_replay.valid && mshr_io_replay.ready;
+    mshr_io_meta_read_fire = mshr_io_meta_read.valid && mshr_io_meta_read.ready;
+    mshr_io_req_fire = mshr_io_req.valid && mshr_io_req.ready;
+  end
 
 
   // ------------
@@ -668,4 +677,409 @@ module DcacheModule (
     // Prefetch does not need to read data array
 
   end
+
+  logic reg_s0_valid_1;
+  logic reg_s0_valid_0;
+  BoomLSUST::BoomDCacheReqST reg_io_lsu_req_bits;
+  BoomLSUST::BoomDCacheReqST reg_s0_req;
+
+  logic s0_valid;
+  BoomLSUST::BoomDCacheReqST s0_req;
+  state s0_type;
+  state reg_s0_type;
+
+  always_ff @(posedge clock or posedge reset) begin
+    if (reset)begin
+      reg_s0_valid_0 <= 0;
+      reg_s0_valid_1 <= 0;
+    end
+    else begin
+      reg_s0_valid_1 <= io_lsu_req.valid;
+      reg_s0_valid_0 <= (mshr_io_replay_fire  || wb_fire || prober_fire || mshr_io_meta_read_fire)? 1: 0;
+
+      reg_io_lsu_req_bits <= io_lsu_req.bits;
+      
+      reg_s0_req <= s0_req;
+      reg_s0_type <= s0_type;
+    end
+  end
+
+
+
+  always_comb begin
+  
+    s0_valid <= io_lsu_req_fire? reg_s0_valid_1: reg_s0_valid_0;
+
+    s0_req <= io_lsu_req_fire         ?   reg_io_lsu_req_bits :
+              wb_fire                 ?   wb_req              :
+              prober_fire             ?   prober_req          :
+              prefetch_fire           ?   prefetch_req        :
+              mshr_io_meta_read_fire  ?   mshr_read_req       : replay_req;
+
+    
+    s0_type <=  io_lsu_req_fire             ?   t_lsu:
+                  wb_fire                   ?   t_wb:
+                  prober_fire               ?   t_probe:
+                  prefetch_fire             ?   t_prefetch:
+                  mshr_io_meta_read_fire    ?   t_mshr_meta_read: t_replay; 
+  end
+
+  // Does this request need to send a response or nack
+
+
+  logic s0_send_resp_or_nack;
+  logic reg_s0_send_resp_or_nack;
+  BoomLSUST::BoomDCacheReqST s1_req;
+
+  logic s2_store_failed;
+  logic s1_valid;
+  logic reg_s1_valid;
+  logic [`coreMaxAddrBits] s1_addr;
+  logic s1_nack;
+  logic s1_send_resp_or_nack;
+  state s1_type;
+
+  logic [HasL1CacheParameters::nWays-1:0] s1_mshr_meta_read_way_en;
+  logic [HasL1CacheParameters::nWays-1:0] reg_s1_mshr_meta_read_way_en;
+
+  logic [HasL1CacheParameters::nWays-1:0] s1_replay_way_en;
+  logic [HasL1CacheParameters::nWays-1:0] reg_s1_replay_way_en;
+
+  logic [HasL1CacheParameters::nWays-1:0] s1_wb_way_en;
+  logic [HasL1CacheParameters::nWays-1:0] reg_s1_wb_way_en;
+
+  always_ff @(posedge clock or posedge reset) begin
+    if (reset)begin
+      reg_s1_valid <= 0;
+    end
+    else begin
+      
+      reg_s1_valid <= s0_valid        &&
+                      !isKilledByBranchST(io_lsu_brupdate, s0_req.uop)  &&
+                      !(io_lsu_exception && io_lsu_req.uop.uses_ldq)    &&
+                      !(s2_store_failed && io_lsu_req_fire && s0_req.uop.uses_stq);
+      
+      reg_s0_send_resp_or_nack <= mshr_io_replay_fire && isRead(mshr_io_replay.bits.uop.mem_cmd)? 1: 0;
+
+
+      reg_s1_mshr_meta_read_way_en <= mshr_io_meta_read.bits.way_en;
+      reg_s1_replay_way_en <= mshr_io_replay.bits.way_en; // For replays, the metadata isn't written yet
+      reg_s1_wb_way_en <= wb_io_data_req.bits.way_en;
+    end
+  end
+
+
+  always_comb begin
+    s0_send_resp_or_nack =  io_lsu_req_fire    ?   s0_valid: reg_s0_send_resp_or_nack;
+                            
+    s1_valid = reg_s1_valid;
+    s1_req = reg_s0_req;
+    s1_req.br_mask = getNewBrMaskST(io_lsu_brupdate, s0_req.uop);
+
+    s1_addr = s1_req.addr;
+    s1_nack = (s1_addr[HasL1HellaCacheParameters::idxMSB:HasL1HellaCacheParameters::idxLSB] == prober_io_meta_write.bits.idx) && !prober_io_req.ready;
+    s1_send_resp_or_nack = reg_s0_send_resp_or_nack;
+    s1_type = reg_s0_type;
+    s1_mshr_meta_read_way_en = reg_s1_mshr_meta_read_way_en;
+    s1_replay_way_en = reg_s1_replay_way_en;
+    s1_wb_way_en = reg_s1_replay_way_en;
+  end
+
+
+  // // tag check
+  // def wayMap[T <: Data](f: Int => T) = VecInit((0 until nWays).map(f))
+  // val s1_tag_eq_way = widthMap(i => wayMap((w: Int) => meta(i).io.resp(w).tag === (s1_addr(i) >> untagBits)).asUInt)
+  // val s1_tag_match_way = widthMap(i =>
+  //                        Mux(s1_type === t_replay, s1_replay_way_en,
+  //                        Mux(s1_type === t_wb,     s1_wb_way_en,
+  //                        Mux(s1_type === t_mshr_meta_read, s1_mshr_meta_read_way_en,
+  //                          wayMap((w: Int) => s1_tag_eq_way(i)(w) && meta(i).io.resp(w).coh.isValid()).asUInt))))
+
+  // val s1_wb_idx_matches = widthMap(i => (s1_addr(i)(untagBits-1,blockOffBits) === wb.io.idx.bits) && wb.io.idx.valid)
+
+  // val s2_req   = RegNext(s1_req)
+  // val s2_type  = RegNext(s1_type)
+  // val s2_valid = widthMap(w =>
+  //                 RegNext(s1_valid(w) &&
+  //                        !io.lsu.s1_kill(w) &&
+  //                        !IsKilledByBranch(io.lsu.brupdate, s1_req(w).uop) &&
+  //                        !(io.lsu.exception && s1_req(w).uop.uses_ldq) &&
+  //                        !(s2_store_failed && (s1_type === t_lsu) && s1_req(w).uop.uses_stq)))
+  // for (w <- 0 until memWidth)
+  //   s2_req(w).uop.br_mask := GetNewBrMask(io.lsu.brupdate, s1_req(w).uop)
+
+  // val s2_tag_match_way = RegNext(s1_tag_match_way)
+  // val s2_tag_match     = s2_tag_match_way.map(_.orR)
+  // val s2_hit_state     = widthMap(i => Mux1H(s2_tag_match_way(i), wayMap((w: Int) => RegNext(meta(i).io.resp(w).coh))))
+  // val s2_has_permission = widthMap(w => s2_hit_state(w).onAccess(s2_req(w).uop.mem_cmd)._1)
+  // val s2_new_hit_state  = widthMap(w => s2_hit_state(w).onAccess(s2_req(w).uop.mem_cmd)._3)
+
+  // val s2_hit = widthMap(w => (s2_tag_match(w) && s2_has_permission(w) && s2_hit_state(w) === s2_new_hit_state(w) && !mshrs.io.block_hit(w)) || s2_type.isOneOf(t_replay, t_wb))
+  // val s2_nack = Wire(Vec(memWidth, Bool()))
+  // assert(!(s2_type === t_replay && !s2_hit(0)), "Replays should always hit")
+  // assert(!(s2_type === t_wb && !s2_hit(0)), "Writeback should always see data hit")
+
+  // val s2_wb_idx_matches = RegNext(s1_wb_idx_matches)
+
+
+  // // lr/sc
+  // val debug_sc_fail_addr = RegInit(0.U)
+  // val debug_sc_fail_cnt  = RegInit(0.U(8.W))
+
+  // val lrsc_count = RegInit(0.U(log2Ceil(lrscCycles).W))
+  // val lrsc_valid = lrsc_count > lrscBackoff.U
+  // val lrsc_addr  = Reg(UInt())
+  // val s2_lr = s2_req(0).uop.mem_cmd === M_XLR && (!RegNext(s1_nack(0)) || s2_type === t_replay)
+  // val s2_sc = s2_req(0).uop.mem_cmd === M_XSC && (!RegNext(s1_nack(0)) || s2_type === t_replay)
+  // val s2_lrsc_addr_match = widthMap(w => lrsc_valid && lrsc_addr === (s2_req(w).addr >> blockOffBits))
+  // val s2_sc_fail = s2_sc && !s2_lrsc_addr_match(0)
+  // when (lrsc_count > 0.U) { lrsc_count := lrsc_count - 1.U }
+  // when (s2_valid(0) && ((s2_type === t_lsu && s2_hit(0) && !s2_nack(0)) ||
+  //                    (s2_type === t_replay && s2_req(0).uop.mem_cmd =/= M_FLUSH_ALL))) {
+  //   when (s2_lr) {
+  //     lrsc_count := (lrscCycles - 1).U
+  //     lrsc_addr := s2_req(0).addr >> blockOffBits
+  //   }
+  //   when (lrsc_count > 0.U) {
+  //     lrsc_count := 0.U
+  //   }
+  // }
+  // for (w <- 0 until memWidth) {
+  //   when (s2_valid(w)                            &&
+  //     s2_type === t_lsu                          &&
+  //     !s2_hit(w)                                 &&
+  //     !(s2_has_permission(w) && s2_tag_match(w)) &&
+  //     s2_lrsc_addr_match(w)                      &&
+  //     !s2_nack(w)) {
+  //     lrsc_count := 0.U
+  //   }
+  // }
+
+  // when (s2_valid(0)) {
+  //   when (s2_req(0).addr === debug_sc_fail_addr) {
+  //     when (s2_sc_fail) {
+  //       debug_sc_fail_cnt := debug_sc_fail_cnt + 1.U
+  //     } .elsewhen (s2_sc) {
+  //       debug_sc_fail_cnt := 0.U
+  //     }
+  //   } .otherwise {
+  //     when (s2_sc_fail) {
+  //       debug_sc_fail_addr := s2_req(0).addr
+  //       debug_sc_fail_cnt  := 1.U
+  //     }
+  //   }
+  // }
+  // assert(debug_sc_fail_cnt < 100.U, "L1DCache failed too many SCs in a row")
+
+  // val s2_data = Wire(Vec(memWidth, Vec(nWays, UInt(encRowBits.W))))
+  // for (i <- 0 until memWidth) {
+  //   for (w <- 0 until nWays) {
+  //     s2_data(i)(w) := data.io.resp(i)(w)
+  //   }
+  // }
+
+  // val s2_data_muxed = widthMap(w => Mux1H(s2_tag_match_way(w), s2_data(w)))
+  // val s2_word_idx   = widthMap(w => if (rowWords == 1) 0.U else s2_req(w).addr(log2Up(rowWords*wordBytes)-1, log2Up(wordBytes)))
+
+  // // replacement policy
+  // val replacer = cacheParams.replacement
+  // val s1_replaced_way_en = UIntToOH(replacer.way)
+  // val s2_replaced_way_en = UIntToOH(RegNext(replacer.way))
+  // val s2_repl_meta = widthMap(i => Mux1H(s2_replaced_way_en, wayMap((w: Int) => RegNext(meta(i).io.resp(w))).toSeq))
+
+  // // nack because of incoming probe
+  // val s2_nack_hit    = RegNext(VecInit(s1_nack))
+  // // Nack when we hit something currently being evicted
+  // val s2_nack_victim = widthMap(w => s2_valid(w) &&  s2_hit(w) && mshrs.io.secondary_miss(w))
+  // // MSHRs not ready for request
+  // val s2_nack_miss   = widthMap(w => s2_valid(w) && !s2_hit(w) && !mshrs.io.req(w).ready)
+  // // Bank conflict on data arrays
+  // val s2_nack_data   = widthMap(w => data.io.nacks(w))
+  // // Can't allocate MSHR for same set currently being written back
+  // val s2_nack_wb     = widthMap(w => s2_valid(w) && !s2_hit(w) && s2_wb_idx_matches(w))
+
+  // s2_nack           := widthMap(w => (s2_nack_miss(w) || s2_nack_hit(w) || s2_nack_victim(w) || s2_nack_data(w) || s2_nack_wb(w)) && s2_type =/= t_replay)
+  // val s2_send_resp = widthMap(w => (RegNext(s1_send_resp_or_nack(w)) && !s2_nack(w) &&
+  //                     (s2_hit(w) || (mshrs.io.req(w).fire() && isWrite(s2_req(w).uop.mem_cmd) && !isRead(s2_req(w).uop.mem_cmd)))))
+  // val s2_send_nack = widthMap(w => (RegNext(s1_send_resp_or_nack(w)) && s2_nack(w)))
+  // for (w <- 0 until memWidth)
+  //   assert(!(s2_send_resp(w) && s2_send_nack(w)))
+
+  // // hits always send a response
+  // // If MSHR is not available, LSU has to replay this request later
+  // // If MSHR is available and this is only a store(not a amo), we don't need to wait for resp later
+  // s2_store_failed := s2_valid(0) && s2_nack(0) && s2_send_nack(0) && s2_req(0).uop.uses_stq
+
+
+  // // Miss handling
+  // for (w <- 0 until memWidth) {
+  //   mshrs.io.req(w).valid := s2_valid(w)          &&
+  //                           !s2_hit(w)            &&
+  //                           !s2_nack_hit(w)       &&
+  //                           !s2_nack_victim(w)    &&
+  //                           !s2_nack_data(w)      &&
+  //                           !s2_nack_wb(w)        &&
+  //                            s2_type.isOneOf(t_lsu, t_prefetch)             &&
+  //                           !IsKilledByBranch(io.lsu.brupdate, s2_req(w).uop) &&
+  //                           !(io.lsu.exception && s2_req(w).uop.uses_ldq)   &&
+  //                            (isPrefetch(s2_req(w).uop.mem_cmd) ||
+  //                             isRead(s2_req(w).uop.mem_cmd)     ||
+  //                             isWrite(s2_req(w).uop.mem_cmd))
+  //   assert(!(mshrs.io.req(w).valid && s2_type === t_replay), "Replays should not need to go back into MSHRs")
+  //   mshrs.io.req(w).bits             := DontCare
+  //   mshrs.io.req(w).bits.uop         := s2_req(w).uop
+  //   mshrs.io.req(w).bits.uop.br_mask := GetNewBrMask(io.lsu.brupdate, s2_req(w).uop)
+  //   mshrs.io.req(w).bits.addr        := s2_req(w).addr
+  //   mshrs.io.req(w).bits.tag_match   := s2_tag_match(w)
+  //   mshrs.io.req(w).bits.old_meta    := Mux(s2_tag_match(w), L1Metadata(s2_repl_meta(w).tag, s2_hit_state(w)), s2_repl_meta(w))
+  //   mshrs.io.req(w).bits.way_en      := Mux(s2_tag_match(w), s2_tag_match_way(w), s2_replaced_way_en)
+
+  //   mshrs.io.req(w).bits.data        := s2_req(w).data
+  //   mshrs.io.req(w).bits.is_hella    := s2_req(w).is_hella
+  //   mshrs.io.req_is_probe(w)         := s2_type === t_probe && s2_valid(w)
+  // }
+
+  // mshrs.io.meta_resp.valid      := !s2_nack_hit(0) || prober.io.mshr_wb_rdy
+  // mshrs.io.meta_resp.bits       := Mux1H(s2_tag_match_way(0), RegNext(meta(0).io.resp))
+  // when (mshrs.io.req.map(_.fire()).reduce(_||_)) { replacer.miss }
+  // tl_out.a <> mshrs.io.mem_acquire
+
+  // // probes and releases
+  // prober.io.req.valid   := tl_out.b.valid && !lrsc_valid
+  // tl_out.b.ready        := prober.io.req.ready && !lrsc_valid
+  // prober.io.req.bits    := tl_out.b.bits
+  // prober.io.way_en      := s2_tag_match_way(0)
+  // prober.io.block_state := s2_hit_state(0)
+  // metaWriteArb.io.in(1) <> prober.io.meta_write
+  // prober.io.mshr_rdy    := mshrs.io.probe_rdy
+  // prober.io.wb_rdy      := (prober.io.meta_write.bits.idx =/= wb.io.idx.bits) || !wb.io.idx.valid
+  // mshrs.io.prober_state := prober.io.state
+
+  // // refills
+  // when (tl_out.d.bits.source === cfg.nMSHRs.U) {
+  //   // This should be ReleaseAck
+  //   tl_out.d.ready := true.B
+  //   mshrs.io.mem_grant.valid := false.B
+  //   mshrs.io.mem_grant.bits  := DontCare
+  // } .otherwise {
+  //   // This should be GrantData
+  //   mshrs.io.mem_grant <> tl_out.d
+  // }
+
+  // dataWriteArb.io.in(1) <> mshrs.io.refill
+  // metaWriteArb.io.in(0) <> mshrs.io.meta_write
+
+  // tl_out.e <> mshrs.io.mem_finish
+
+  // // writebacks
+  // val wbArb = Module(new Arbiter(new WritebackReq(edge.bundle), 2))
+  // // 0 goes to prober, 1 goes to MSHR evictions
+  // wbArb.io.in(0)       <> prober.io.wb_req
+  // wbArb.io.in(1)       <> mshrs.io.wb_req
+  // wb.io.req            <> wbArb.io.out
+  // wb.io.data_resp       := s2_data_muxed(0)
+  // mshrs.io.wb_resp      := wb.io.resp
+  // wb.io.mem_grant       := tl_out.d.fire() && tl_out.d.bits.source === cfg.nMSHRs.U
+
+  // val lsu_release_arb = Module(new Arbiter(new TLBundleC(edge.bundle), 2))
+  // io.lsu.release <> lsu_release_arb.io.out
+  // lsu_release_arb.io.in(0) <> wb.io.lsu_release
+  // lsu_release_arb.io.in(1) <> prober.io.lsu_release
+
+  // TLArbiter.lowest(edge, tl_out.c, wb.io.release, prober.io.rep)
+
+  // io.lsu.perf.release := edge.done(tl_out.c)
+  // io.lsu.perf.acquire := edge.done(tl_out.a)
+
+  // // load data gen
+  // val s2_data_word_prebypass = widthMap(w => s2_data_muxed(w) >> Cat(s2_word_idx(w), 0.U(log2Ceil(coreDataBits).W)))
+  // val s2_data_word = Wire(Vec(memWidth, UInt()))
+
+  // val loadgen = (0 until memWidth).map { w =>
+  //   new LoadGen(s2_req(w).uop.mem_size, s2_req(w).uop.mem_signed, s2_req(w).addr,
+  //               s2_data_word(w), s2_sc && (w == 0).B, wordBytes)
+  // }
+  // // Mux between cache responses and uncache responses
+  // val cache_resp   = Wire(Vec(memWidth, Valid(new BoomDCacheResp)))
+  // for (w <- 0 until memWidth) {
+  //   cache_resp(w).valid         := s2_valid(w) && s2_send_resp(w)
+  //   cache_resp(w).bits.uop      := s2_req(w).uop
+  //   cache_resp(w).bits.data     := loadgen(w).data | s2_sc_fail
+  //   cache_resp(w).bits.is_hella := s2_req(w).is_hella
+  // }
+
+  // val uncache_resp = Wire(Valid(new BoomDCacheResp))
+  // uncache_resp.bits     := mshrs.io.resp.bits
+  // uncache_resp.valid    := mshrs.io.resp.valid
+  // mshrs.io.resp.ready := !(cache_resp.map(_.valid).reduce(_&&_)) // We can backpressure the MSHRs, but not cache hits
+
+  // val resp = WireInit(cache_resp)
+  // var uncache_responding = false.B
+  // for (w <- 0 until memWidth) {
+  //   val uncache_respond = !cache_resp(w).valid && !uncache_responding
+  //   when (uncache_respond) {
+  //     resp(w) := uncache_resp
+  //   }
+  //   uncache_responding = uncache_responding || uncache_respond
+  // }
+
+  // for (w <- 0 until memWidth) {
+  //   io.lsu.resp(w).valid := resp(w).valid &&
+  //                           !(io.lsu.exception && resp(w).bits.uop.uses_ldq) &&
+  //                           !IsKilledByBranch(io.lsu.brupdate, resp(w).bits.uop)
+  //   io.lsu.resp(w).bits  := UpdateBrMask(io.lsu.brupdate, resp(w).bits)
+
+  //   io.lsu.nack(w).valid := s2_valid(w) && s2_send_nack(w) &&
+  //                           !(io.lsu.exception && s2_req(w).uop.uses_ldq) &&
+  //                           !IsKilledByBranch(io.lsu.brupdate, s2_req(w).uop)
+  //   io.lsu.nack(w).bits  := UpdateBrMask(io.lsu.brupdate, s2_req(w))
+  //   assert(!(io.lsu.nack(w).valid && s2_type =/= t_lsu))
+  // }
+
+  // // Store/amo hits
+  // val s3_req   = RegNext(s2_req(0))
+  // val s3_valid = RegNext(s2_valid(0) && s2_hit(0) && isWrite(s2_req(0).uop.mem_cmd) &&
+  //                        !s2_sc_fail && !(s2_send_nack(0) && s2_nack(0)))
+  // for (w <- 1 until memWidth) {
+  //   assert(!(s2_valid(w) && s2_hit(w) && isWrite(s2_req(w).uop.mem_cmd) &&
+  //                        !s2_sc_fail && !(s2_send_nack(w) && s2_nack(w))),
+  //     "Store must go through 0th pipe in L1D")
+  // }
+
+  // // For bypassing
+  // val s4_req   = RegNext(s3_req)
+  // val s4_valid = RegNext(s3_valid)
+  // val s5_req   = RegNext(s4_req)
+  // val s5_valid = RegNext(s4_valid)
+
+  // val s3_bypass = widthMap(w => s3_valid && ((s2_req(w).addr >> wordOffBits) === (s3_req.addr >> wordOffBits)))
+  // val s4_bypass = widthMap(w => s4_valid && ((s2_req(w).addr >> wordOffBits) === (s4_req.addr >> wordOffBits)))
+  // val s5_bypass = widthMap(w => s5_valid && ((s2_req(w).addr >> wordOffBits) === (s5_req.addr >> wordOffBits)))
+
+  // // Store -> Load bypassing
+  // for (w <- 0 until memWidth) {
+  //   s2_data_word(w) := Mux(s3_bypass(w), s3_req.data,
+  //                      Mux(s4_bypass(w), s4_req.data,
+  //                      Mux(s5_bypass(w), s5_req.data,
+  //                                        s2_data_word_prebypass(w))))
+  // }
+  // val amoalu   = Module(new AMOALU(xLen))
+  // amoalu.io.mask := new StoreGen(s2_req(0).uop.mem_size, s2_req(0).addr, 0.U, xLen/8).mask
+  // amoalu.io.cmd  := s2_req(0).uop.mem_cmd
+  // amoalu.io.lhs  := s2_data_word(0)
+  // amoalu.io.rhs  := s2_req(0).data
+
+
+  // s3_req.data := amoalu.io.out
+  // val s3_way   = RegNext(s2_tag_match_way(0))
+
+  // dataWriteArb.io.in(0).valid       := s3_valid
+  // dataWriteArb.io.in(0).bits.addr   := s3_req.addr
+  // dataWriteArb.io.in(0).bits.wmask  := UIntToOH(s3_req.addr.extract(rowOffBits-1,offsetlsb))
+  // dataWriteArb.io.in(0).bits.data   := Fill(rowWords, s3_req.data)
+  // dataWriteArb.io.in(0).bits.way_en := s3_way
+
+
+  // io.lsu.ordered := mshrs.io.fence_rdy && !s1_valid.reduce(_||_) && !s2_valid.reduce(_||_)
+
 endmodule
