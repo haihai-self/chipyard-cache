@@ -87,15 +87,15 @@ module BoomNonBlockingDCache( // @[chipyard.TestHarness.LargeBoomConfig.fir 1721
   input          io_lsu_force_order, // @[chipyard.TestHarness.LargeBoomConfig.fir 172129:4]
   output         io_lsu_ordered // @[chipyard.TestHarness.LargeBoomConfig.fir 172129:4]
 );
-  DecoupledIF #(BundleST::TLBundleAST) io_auto_a();
-  DecoupledIF #(BundleST::TLBundleBST) io_auto_b();
-  DecoupledIF #(BundleST::TLBundleCST) io_auto_c();
-  DecoupledIF #(BundleST::TLBundleDST) io_auto_d();
-  DecoupledIF #(BundleST::TLBundleEST) io_auto_e();
-  DecoupledIF #(BoomLSUST::BoomDCacheReqValidST) io_lsu_req();
-  DecoupledIF #(BundleST::TLBundleCST) io_lsu_release();
-  ValidSTIF #(BoomLSUST::BoomDCacheRespST) io_lsu_resp();
-  ValidSTIF #(BoomLSUST::BoomDCacheReqST) io_lsu_nack();
+  DecoupledIF #(BundleST::TLBundleAST) io_auto_a ();
+  DecoupledIF #(BundleST::TLBundleBST) io_auto_b ();
+  DecoupledIF #(BundleST::TLBundleCST) io_auto_c ();
+  DecoupledIF #(BundleST::TLBundleDST) io_auto_d ();
+  DecoupledIF #(BundleST::TLBundleEST) io_auto_e ();
+  DecoupledIF #(BoomLSUST::BoomDCacheReqValidST) io_lsu_req ();
+  DecoupledIF #(BundleST::TLBundleCST) io_lsu_release ();
+  ValidSTIF #(BoomLSUST::BoomDCacheRespST) io_lsu_resp ();
+  ValidSTIF #(BoomLSUST::BoomDCacheReqST) io_lsu_nack ();
 
   ExuST::BrUpdateInfoST io_lsu_brupdate;
 
@@ -158,7 +158,7 @@ module BoomNonBlockingDCache( // @[chipyard.TestHarness.LargeBoomConfig.fir 1721
     io_lsu_req.bits.data = io_lsu_req_bits_0_bits_data;
     io_lsu_req.bits.is_hella = io_lsu_req_bits_0_bits_is_hella;
 
-    io_lsu_resp_0_valid =  io_lsu_resp.valid;
+    io_lsu_resp_0_valid = io_lsu_resp.valid;
     io_lsu_resp_0_bits_uop_ldq_idx = io_lsu_resp.bits.uop.ldq_idx;
     io_lsu_resp_0_bits_uop_stq_idx = io_lsu_resp.bits.uop.stq_idx;
     io_lsu_resp_0_bits_uop_is_amo = io_lsu_resp.bits.uop.is_amo;
@@ -217,8 +217,8 @@ module DcacheModule (
 
     ExuST::BrUpdateInfoST io_lsu_brupdate,  //BrUpdateInfoST
 
-    ValidSTIF.out   io_lsu_resp,  //BoomDCacheResp
-    ValidSTIF.out   io_lsu_nack,  //BoomDcacheReq
+    ValidSTIF.out io_lsu_resp,  //BoomDCacheResp
+    ValidSTIF.out io_lsu_nack,  //BoomDcacheReq
 
     DecoupledIF.out io_auto_a,  //TLBundleAST
     DecoupledIF.in  io_auto_b,  //TLBundleBST
@@ -257,110 +257,116 @@ module DcacheModule (
   } state;
 
 
-  DecoupledIF #(.T(NBDcacheST::WriteBackReqST)) wb_io_req();
-  DecoupledIF #(.T(HellaCacheST::L1MetaReadReqST)) wb_io_meta_read();
-  DecoupledIF #(.T(NBDcacheST::L1DataReadReqST)) wb_io_data_req();
-  DecoupledIF #(.T(BundleST::TLBundleCST)) wb_io_release();
-  DecoupledIF #(.T(BundleST::TLBundleCST)) wb_io_lsu_release();
-  
-  ValidIF #(.bits_size(6)) wb_io_idx();
-  
-  BoomWriteBackUnit wb(
-    .clock(clock),
-    .reset(reset),
-    .io_resp(),
-    .io_data_resp(),
-    .io_mem_grant(),
+  DecoupledIF #(.T(NBDcacheST::WriteBackReqST)) wb_io_req ();
+  DecoupledIF #(.T(HellaCacheST::L1MetaReadReqST)) wb_io_meta_read ();
+  DecoupledIF #(.T(NBDcacheST::L1DataReadReqST)) wb_io_data_req ();
+  DecoupledIF #(.T(BundleST::TLBundleCST)) wb_io_release ();
+  DecoupledIF #(.T(BundleST::TLBundleCST)) wb_io_lsu_release ();
 
-    .io_idx(wb_io_idx),
+  ValidIF #(.bits_size(6)) wb_io_idx ();
 
-    .io_req(wb_io_req),
-    .io_meta_read(wb_io_meta_read),
-    .io_data_req(wb_io_data_req),
-    .io_release(wb_io_release),
-    .io_lsu_release(wb_io_lsu_release)
+  BoomWriteBackUnit wb (
+      .clock       (clock),
+      .reset       (reset),
+      .io_resp     (),
+      .io_data_resp(),
+      .io_mem_grant(),
+
+      .io_idx(wb_io_idx),
+
+      .io_req        (wb_io_req),
+      .io_meta_read  (wb_io_meta_read),
+      .io_data_req   (wb_io_data_req),
+      .io_release    (wb_io_release),
+      .io_lsu_release(wb_io_lsu_release)
   );
-  DecoupledIF #(.T(BundleST::TLBundleBST)) prober_io_req();
-  DecoupledIF #(.T(BundleST::TLBundleCST)) prober_io_rep();
-  DecoupledIF #(.T(HellaCacheST::L1MetaReadReqST)) prober_io_meta_read();
-  DecoupledIF #(.T(HellaCacheST::L1MetaWriteReqST)) prober_io_meta_write();
-  DecoupledIF #(.T(NBDcacheST::WriteBackReqST)) prober_io_wb_req();
-  DecoupledIF #(.T(BundleST::TLBundleCST)) prober_io_lsu_release();
-  
-  ValidIF #(.bits_size(`coreMaxAddrBits)) prober_io_state();
+  DecoupledIF #(.T(BundleST::TLBundleBST)) prober_io_req ();
+  DecoupledIF #(.T(BundleST::TLBundleCST)) prober_io_rep ();
+  DecoupledIF #(.T(HellaCacheST::L1MetaReadReqST)) prober_io_meta_read ();
+  DecoupledIF #(.T(HellaCacheST::L1MetaWriteReqST)) prober_io_meta_write ();
+  DecoupledIF #(.T(NBDcacheST::WriteBackReqST)) prober_io_wb_req ();
+  DecoupledIF #(.T(BundleST::TLBundleCST)) prober_io_lsu_release ();
+
+  ValidIF #(.bits_size(`coreMaxAddrBits)) prober_io_state ();
 
 
-  BoomProbeUnit prober(
-    .clock(clock),
-    .reset(reset),
-    .io_way_en(),
-    .io_wb_rdy(),
-    .io_mshr_rdy(),
-    .io_mshr_wb_rdy(),
-    .io_block_state(),
+  BoomProbeUnit prober (
+      .clock         (clock),
+      .reset         (reset),
+      .io_way_en     (),
+      .io_wb_rdy     (),
+      .io_mshr_rdy   (),
+      .io_mshr_wb_rdy(),
+      .io_block_state(),
 
-    .io_state(prober_io_state),
+      .io_state(prober_io_state),
 
-    .io_rep(prober_io_rep),
-    .io_req(prober_io_req),
-    .io_meta_read(prober_io_meta_read),
-    .io_meta_write(prober_io_meta_write),
-    .io_wb_req(prober_io_wb_req),
-    .io_lsu_release(prober_io_lsu_release)
-  );  
-
-
-  ValidIF #(.bits_size(`coreMaxAddrBits)) mshr_io_prober_state();
-  ValidSTIF #(.T(HellaCacheST::L1MetadataST)) mshr_io_meta_resp();
-
-  DecoupledIF #(.T(MSHRST::BoomDCacheReqInternalST)) mshr_io_req();
-  DecoupledIF #(.T(BundleST::TLBundleDST)) mshr_io_mem_grant();
-  DecoupledIF #(.T(BundleST::TLBundleAST)) mshr_io_mem_acquire();
-  DecoupledIF #(.T(BundleST::TLBundleEST)) mshr_io_mem_finish();
-  DecoupledIF #(.T(BoomLSUST::BoomDCacheRespST)) mshr_io_resp();
-  DecoupledIF #(.T(NBDcacheST::L1DataWriteReqST)) mshr_io_refill();
-  DecoupledIF #(.T(NBDcacheST::WriteBackReqST)) mshr_io_wb_req();
-  DecoupledIF #(.T(HellaCacheST::L1MetaWriteReqST)) mshr_io_meta_write();
-  DecoupledIF #(.T(HellaCacheST::L1MetaReadReqST)) mshr_io_meta_read();
-  DecoupledIF #(.T(MSHRST::BoomDCacheReqInternalST)) mshr_io_replay();
-  DecoupledIF #(.T(BoomLSUST::BoomDCacheReqST)) mshr_io_prefetch();
+      .io_rep        (prober_io_rep),
+      .io_req        (prober_io_req),
+      .io_meta_read  (prober_io_meta_read),
+      .io_meta_write (prober_io_meta_write),
+      .io_wb_req     (prober_io_wb_req),
+      .io_lsu_release(prober_io_lsu_release)
+  );
 
 
+  ValidIF #(.bits_size(`coreMaxAddrBits)) mshr_io_prober_state ();
+  ValidSTIF #(.T(HellaCacheST::L1MetadataST)) mshr_io_meta_resp ();
 
-  mshrs BoomMSHRFile(
-    .clock(clock),
-    .reset(reset),
-    .io_req_is_probe(),
-    .io_exception(io_lsu_exception),
-    .io_rob_pnr_idx(),
-    .io_clear_all(io_lsu_force_order),
-    .io_wb_resp(),
-    .io_fence_rdy(),
-    .io_secondary_miss(),
-    .io_block_hit(),
-    .io_probe_rdy(),
+  DecoupledIF #(.T(MSHRST::BoomDCacheReqInternalST)) mshr_io_req ();
+  DecoupledIF #(.T(BundleST::TLBundleDST)) mshr_io_mem_grant ();
+  DecoupledIF #(.T(BundleST::TLBundleAST)) mshr_io_mem_acquire ();
+  DecoupledIF #(.T(BundleST::TLBundleEST)) mshr_io_mem_finish ();
+  DecoupledIF #(.T(BoomLSUST::BoomDCacheRespST)) mshr_io_resp ();
+  DecoupledIF #(.T(NBDcacheST::L1DataWriteReqST)) mshr_io_refill ();
+  DecoupledIF #(.T(NBDcacheST::WriteBackReqST)) mshr_io_wb_req ();
+  DecoupledIF #(.T(HellaCacheST::L1MetaWriteReqST)) mshr_io_meta_write ();
+  DecoupledIF #(.T(HellaCacheST::L1MetaReadReqST)) mshr_io_meta_read ();
+  DecoupledIF #(.T(MSHRST::BoomDCacheReqInternalST)) mshr_io_replay ();
+  DecoupledIF #(.T(BoomLSUST::BoomDCacheReqST)) mshr_io_prefetch ();
 
-    .io_brupdate(io_lsu_brupdate),
 
-    .io_prober_state(mshr_io_prober_state),
-    .io_meta_resp(mshr_io_meta_resp),
 
-    .io_req(mshr_io_req),
-    .io_resp(mshr_io_resp),
-    .io_mem_grant(mshr_io_mem_grant),
-    .io_mem_acquire(mshr_io_mem_acquire),
-    .io_mem_finish(mshr_io_mem_finish),
-    .io_refill(mshr_io_refill),
-    .io_meta_write(mshr_io_meta_write),
-    .io_meta_read(mshr_io_meta_read),
-    .io_replay(mshr_io_replay),
-    .io_prefetch(mshr_io_prefetch),
-    .io_wb_req(mshr_io_wb_req)
+
+  //output 
+  logic mshr_io_block_hit;
+  logic mshr_io_secondary_miss;
+
+
+  mshrs BoomMSHRFile (
+      .clock            (clock),
+      .reset            (reset),
+      .io_req_is_probe  (),
+      .io_exception     (io_lsu_exception),
+      .io_rob_pnr_idx   (),
+      .io_clear_all     (io_lsu_force_order),
+      .io_wb_resp       (),
+      .io_fence_rdy     (),
+      .io_secondary_miss(mshr_io_secondary_miss),
+      .io_block_hit     (mshr_io_block_hit),
+      .io_probe_rdy     (),
+
+      .io_brupdate(io_lsu_brupdate),
+
+      .io_prober_state(mshr_io_prober_state),
+      .io_meta_resp   (mshr_io_meta_resp),
+
+      .io_req        (mshr_io_req),
+      .io_resp       (mshr_io_resp),
+      .io_mem_grant  (mshr_io_mem_grant),
+      .io_mem_acquire(mshr_io_mem_acquire),
+      .io_mem_finish (mshr_io_mem_finish),
+      .io_refill     (mshr_io_refill),
+      .io_meta_write (mshr_io_meta_write),
+      .io_meta_read  (mshr_io_meta_read),
+      .io_replay     (mshr_io_replay),
+      .io_prefetch   (mshr_io_prefetch),
+      .io_wb_req     (mshr_io_wb_req)
   );
   logic mshr_io_replay_fire;
   logic mshr_io_meta_read_fire;
   logic mshr_io_req_fire;
-  
+
   always_comb begin
     mshr_io_replay_fire = mshr_io_replay.valid && mshr_io_replay.ready;
     mshr_io_meta_read_fire = mshr_io_meta_read.valid && mshr_io_meta_read.ready;
@@ -370,18 +376,18 @@ module DcacheModule (
 
   // ------------
   // tags
-  DecoupledIF #(.T(HellaCacheST::L1MetaReadReqST)) meta_io_write();
-  DecoupledIF #(.T(HellaCacheST::L1MetaWriteReqST)) meta_io_read();
+  DecoupledIF #(.T(HellaCacheST::L1MetaReadReqST)) meta_io_write ();
+  DecoupledIF #(.T(HellaCacheST::L1MetaWriteReqST)) meta_io_read ();
 
   logic [BundleParam::TLPermissions_width-1:0] meta_io_resp[HasL1CacheParameters::nWays-1:0];
 
-  L1MetadataArray meta(
-    .clock(clock),
-    .reset(reset),
-    .io_resp(meta_io_resp),
-    
-    .io_read(meta_io_read),
-    .io_write(meta_io_write)
+  L1MetadataArray meta (
+      .clock  (clock),
+      .reset  (reset),
+      .io_resp(meta_io_resp),
+
+      .io_read (meta_io_read),
+      .io_write(meta_io_write)
   );
 
 
@@ -393,22 +399,22 @@ module DcacheModule (
   logic metaWriteArb_io_out_ready;
   logic metaWriteArb_io_out_valid;
   HellaCacheST::L1MetaReadReqST metaWriteArb_io_out;
-  
+
   logic metaWriteArb_io_chosen;
   logic metaWriteArb_io_out_fire;
   Arbiter #(
-    .n(2),
-    .T(HellaCacheST::L1MetaWriteReqST)
-  ) metaWriteArb(
-    .io_in_ready(metaWriteArb_io_out_ready),
-    .io_in_valid(metaWriteArb_io_in_valid),
-    .io_in(metaWriteArb_io_in),
+      .n(2),
+      .T(HellaCacheST::L1MetaWriteReqST)
+  ) metaWriteArb (
+      .io_in_ready(metaWriteArb_io_out_ready),
+      .io_in_valid(metaWriteArb_io_in_valid),
+      .io_in      (metaWriteArb_io_in),
 
-    .io_out_ready(metaWriteArb_io_out_ready),
-    .io_out_valid(metaWriteArb_io_out_valid),
-    .io_out(metaWriteArb_io_out),
+      .io_out_ready(metaWriteArb_io_out_ready),
+      .io_out_valid(metaWriteArb_io_out_valid),
+      .io_out      (metaWriteArb_io_out),
 
-    .io_chosen(metaWriteArb_io_chosen)
+      .io_chosen(metaWriteArb_io_chosen)
   );
   assign metaWriteArb_io_out_fire = metaWriteArb_io_out_valid && metaWriteArb_io_in_valid;
 
@@ -422,22 +428,22 @@ module DcacheModule (
   logic metaReadArb_io_out_ready;
   logic metaReadArb_io_out_valid;
   HellaCacheST::L1MetaReadReqST metaReadArb_io_out;
-  
+
   logic metaReadArb_io_chosen;
   logic metaReadArb_io_out_fire;
   Arbiter #(
-    .n(6),
-    .T(HellaCacheST::L1MetaReadReqST)
-  ) metaReadArb(
-    .io_in_ready(metaReadArb_io_in_ready),
-    .io_in_valid(metaReadArb_io_in_valid),
-    .io_in(metaReadArb_io_in),
+      .n(6),
+      .T(HellaCacheST::L1MetaReadReqST)
+  ) metaReadArb (
+      .io_in_ready(metaReadArb_io_in_ready),
+      .io_in_valid(metaReadArb_io_in_valid),
+      .io_in      (metaReadArb_io_in),
 
-    .io_out_ready(metaReadArb_io_out_ready),
-    .io_out_valid(metaReadArb_io_out_valid),
-    .io_out(metaReadArb_io_out),
+      .io_out_ready(metaReadArb_io_out_ready),
+      .io_out_valid(metaReadArb_io_out_valid),
+      .io_out      (metaReadArb_io_out),
 
-    .io_chosen(metaReadArb_io_chosen)
+      .io_chosen(metaReadArb_io_chosen)
   );
 
 
@@ -456,22 +462,22 @@ module DcacheModule (
 
   // ------------
   // data
-  
+
   logic data_io_nack;
   logic [HasL1HellaCacheParameters::encRowBits-1:0] data_io_resp[HasL1CacheParameters::nWays];
 
-  DecoupledIF #(NBDcacheST::L1DataReadReqST) data_io_read();
-  DecoupledIF #(NBDcacheST::L1DataWriteReqST) data_io_write();
+  DecoupledIF #(NBDcacheST::L1DataReadReqST) data_io_read ();
+  DecoupledIF #(NBDcacheST::L1DataWriteReqST) data_io_write ();
 
-  BoomDuplicatedDataArray data(
-    .colck(clock),
-    .reset(reset),
+  BoomDuplicatedDataArray data (
+      .colck(clock),
+      .reset(reset),
 
-    .io_read(data_io_read),
-    .io_write(data_io_write),
+      .io_read (data_io_read),
+      .io_write(data_io_write),
 
-    .io_resp(data_io_resp),
-    .io_nack(data_io_nack)
+      .io_resp(data_io_resp),
+      .io_nack(data_io_nack)
   );
   // 0 goes to pipeline, 1 goes to MSHR refills
   logic [1:0] dataWriteArb_io_in_valid;
@@ -481,22 +487,22 @@ module DcacheModule (
   logic dataWriteArb_io_out_ready;
   logic dataWriteArb_io_out_valid;
   NBDcacheST::L1DataReadReqST dataWriteArb_io_out;
-  
+
   logic dataWriteArb_io_chosen;
   logic dataWriteArb_io_out_fire;
   Arbiter #(
-    .n(2),
-    .T(NBDcacheST::L1DataReadReqST)
-  ) dataWriteArb(
-    .io_in_ready(dataWriteArb_io_out_ready),
-    .io_in_valid(dataWriteArb_io_in_valid),
-    .io_in(dataWriteArb_io_in),
+      .n(2),
+      .T(NBDcacheST::L1DataReadReqST)
+  ) dataWriteArb (
+      .io_in_ready(dataWriteArb_io_out_ready),
+      .io_in_valid(dataWriteArb_io_in_valid),
+      .io_in      (dataWriteArb_io_in),
 
-    .io_out_ready(dataWriteArb_io_out_ready),
-    .io_out_valid(dataWriteArb_io_out_valid),
-    .io_out(dataWriteArb_io_out),
+      .io_out_ready(dataWriteArb_io_out_ready),
+      .io_out_valid(dataWriteArb_io_out_valid),
+      .io_out      (dataWriteArb_io_out),
 
-    .io_chosen(dataWriteArb_io_chosen)
+      .io_chosen(dataWriteArb_io_chosen)
   );
   assign dataWriteArb_io_out_fire = dataWriteArb_io_out_valid && dataWriteArb_io_in_valid;
 
@@ -508,22 +514,22 @@ module DcacheModule (
   logic dataReadArb_io_out_ready;
   logic dataReadArb_io_out_valid;
   BoomL1DataReadReqST dataReadArb_io_out;
-  
+
   logic dataReadArb_io_chosen;
   logic dataReadArb_io_out_fire;
   Arbiter #(
-    .n(3),
-    .T(BoomL1DataReadReqST)
-  ) dataReadArb(
-    .io_in_ready(dataReadArb_io_out_ready),
-    .io_in_valid(dataReadArb_io_in_valid),
-    .io_in(dataReadArb_io_in),
+      .n(3),
+      .T(BoomL1DataReadReqST)
+  ) dataReadArb (
+      .io_in_ready(dataReadArb_io_out_ready),
+      .io_in_valid(dataReadArb_io_in_valid),
+      .io_in      (dataReadArb_io_in),
 
-    .io_out_ready(dataReadArb_io_out_ready),
-    .io_out_valid(dataReadArb_io_out_valid),
-    .io_out(dataReadArb_io_out),
+      .io_out_ready(dataReadArb_io_out_ready),
+      .io_out_valid(dataReadArb_io_out_valid),
+      .io_out      (dataReadArb_io_out),
 
-    .io_chosen(dataReadArb_io_chosen)
+      .io_chosen(dataReadArb_io_chosen)
   );
   assign dataReadArb_io_out_fire = dataReadArb_io_out_valid && dataReadArb_io_in_valid;
 
@@ -539,14 +545,14 @@ module DcacheModule (
 
     data_io_write.valid = dataWriteArb_io_out_fire;
     data_io_write.bits = dataWriteArb_io_out;
-    
+
     dataWriteArb_io_out_ready = 1;
   end
 
 
   // ------------
   // New requests
-  
+
   always_comb begin
     io_lsu_req.ready = metaReadArb_io_in_ready[4] && dataReadArb_io_in_ready[2];
     metaReadArb_io_in_valid[4] = io_lsu_req.valid;
@@ -631,7 +637,7 @@ module DcacheModule (
     dataReadArb_io_in[1].valid = 0;
     wb_io_data_req.ready = metaReadArb_io_in_ready[2] && dataReadArb_io_in_ready[1];
   end
-  
+
   // -------
   // Prober
   logic prober_io_meta_read_fire;
@@ -689,16 +695,16 @@ module DcacheModule (
   state reg_s0_type;
 
   always_ff @(posedge clock or posedge reset) begin
-    if (reset)begin
+    if (reset) begin
       reg_s0_valid_0 <= 0;
       reg_s0_valid_1 <= 0;
-    end
-    else begin
+    end else begin
       reg_s0_valid_1 <= io_lsu_req.valid;
-      reg_s0_valid_0 <= (mshr_io_replay_fire  || wb_fire || prober_fire || mshr_io_meta_read_fire)? 1: 0;
+      reg_s0_valid_0
+          <= (mshr_io_replay_fire || wb_fire || prober_fire || mshr_io_meta_read_fire) ? 1 : 0;
 
       reg_io_lsu_req_bits <= io_lsu_req.bits;
-      
+
       reg_s0_req <= s0_req;
       reg_s0_type <= s0_type;
     end
@@ -707,8 +713,8 @@ module DcacheModule (
 
 
   always_comb begin
-  
-    s0_valid <= io_lsu_req_fire? reg_s0_valid_1: reg_s0_valid_0;
+
+    s0_valid <= io_lsu_req_fire ? reg_s0_valid_1 : reg_s0_valid_0;
 
     s0_req <= io_lsu_req_fire         ?   reg_io_lsu_req_bits :
               wb_fire                 ?   wb_req              :
@@ -724,9 +730,9 @@ module DcacheModule (
                   mshr_io_meta_read_fire    ?   t_mshr_meta_read: t_replay; 
   end
 
+
+  // -------
   // Does this request need to send a response or nack
-
-
   logic s0_send_resp_or_nack;
   logic reg_s0_send_resp_or_nack;
   BoomLSUST::BoomDCacheReqST s1_req;
@@ -736,6 +742,7 @@ module DcacheModule (
   logic reg_s1_valid;
   logic [`coreMaxAddrBits] s1_addr;
   logic s1_nack;
+  logic reg_s1_nack;
   logic s1_send_resp_or_nack;
   state s1_type;
 
@@ -749,35 +756,38 @@ module DcacheModule (
   logic [HasL1CacheParameters::nWays-1:0] reg_s1_wb_way_en;
 
   always_ff @(posedge clock or posedge reset) begin
-    if (reset)begin
+    if (reset) begin
       reg_s1_valid <= 0;
-    end
-    else begin
-      
-      reg_s1_valid <= s0_valid        &&
-                      !isKilledByBranchST(io_lsu_brupdate, s0_req.uop)  &&
-                      !(io_lsu_exception && io_lsu_req.uop.uses_ldq)    &&
+      reg_s1_nack <= 0;
+    end else begin
+      reg_s1_nack = s1_nack;
+      reg_s1_valid <= s0_valid                                            &&
+                      !isKilledByBranchST(io_lsu_brupdate, s0_req.uop)    &&
+                      !(io_lsu_exception && io_lsu_req.uop.uses_ldq)      &&
                       !(s2_store_failed && io_lsu_req_fire && s0_req.uop.uses_stq);
       
-      reg_s0_send_resp_or_nack <= mshr_io_replay_fire && isRead(mshr_io_replay.bits.uop.mem_cmd)? 1: 0;
+      reg_s0_send_resp_or_nack <=
+          mshr_io_replay_fire && isRead(mshr_io_replay.bits.uop.mem_cmd) ? 1 : 0;
 
 
       reg_s1_mshr_meta_read_way_en <= mshr_io_meta_read.bits.way_en;
-      reg_s1_replay_way_en <= mshr_io_replay.bits.way_en; // For replays, the metadata isn't written yet
+      reg_s1_replay_way_en <=
+          mshr_io_replay.bits.way_en;  // For replays, the metadata isn't written yet
       reg_s1_wb_way_en <= wb_io_data_req.bits.way_en;
     end
   end
 
 
   always_comb begin
-    s0_send_resp_or_nack =  io_lsu_req_fire    ?   s0_valid: reg_s0_send_resp_or_nack;
-                            
+    s0_send_resp_or_nack = io_lsu_req_fire ? s0_valid : reg_s0_send_resp_or_nack;
+
     s1_valid = reg_s1_valid;
     s1_req = reg_s0_req;
     s1_req.br_mask = getNewBrMaskST(io_lsu_brupdate, s0_req.uop);
 
     s1_addr = s1_req.addr;
-    s1_nack = (s1_addr[HasL1HellaCacheParameters::idxMSB:HasL1HellaCacheParameters::idxLSB] == prober_io_meta_write.bits.idx) && !prober_io_req.ready;
+    s1_nack = (s1_addr[HasL1HellaCacheParameters::idxMSB:HasL1HellaCacheParameters::idxLSB] ==
+               prober_io_meta_write.bits.idx) && !prober_io_req.ready;
     s1_send_resp_or_nack = reg_s0_send_resp_or_nack;
     s1_type = reg_s0_type;
     s1_mshr_meta_read_way_en = reg_s1_mshr_meta_read_way_en;
@@ -785,102 +795,208 @@ module DcacheModule (
     s1_wb_way_en = reg_s1_replay_way_en;
   end
 
+  // -------
+  // tag check
+  logic [HasL1CacheParameters::nWays-1:0] s1_tag_eq_way;
+  logic [HasL1CacheParameters::nWays-1:0] s1_tag_match_way;
+  logic [HasL1CacheParameters::nWays-1:0] s1_tag_match_way_1;
+  logic s1_wb_idx_matches;
 
-  // // tag check
-  // def wayMap[T <: Data](f: Int => T) = VecInit((0 until nWays).map(f))
-  // val s1_tag_eq_way = widthMap(i => wayMap((w: Int) => meta(i).io.resp(w).tag === (s1_addr(i) >> untagBits)).asUInt)
-  // val s1_tag_match_way = widthMap(i =>
-  //                        Mux(s1_type === t_replay, s1_replay_way_en,
-  //                        Mux(s1_type === t_wb,     s1_wb_way_en,
-  //                        Mux(s1_type === t_mshr_meta_read, s1_mshr_meta_read_way_en,
-  //                          wayMap((w: Int) => s1_tag_eq_way(i)(w) && meta(i).io.resp(w).coh.isValid()).asUInt))))
+  always_comb begin
+    s1_tag_eq_way = 0;
+    for (int i = 0; i < HasL1CacheParameters::nWays; i++) begin
+      if (meta_io_resp.tag == (s1_addr >> HasL1CacheParameters::untagBits)) s1_tag_eq_way[i] = 1;
+      else s1_tag_eq_way[i] = 0;
 
-  // val s1_wb_idx_matches = widthMap(i => (s1_addr(i)(untagBits-1,blockOffBits) === wb.io.idx.bits) && wb.io.idx.valid)
+      s1_tag_match_way_1[i] = s1_tag_eq_way[i] && (meta_io_resp[i].coh > 0);
+    end
 
-  // val s2_req   = RegNext(s1_req)
-  // val s2_type  = RegNext(s1_type)
-  // val s2_valid = widthMap(w =>
-  //                 RegNext(s1_valid(w) &&
-  //                        !io.lsu.s1_kill(w) &&
-  //                        !IsKilledByBranch(io.lsu.brupdate, s1_req(w).uop) &&
-  //                        !(io.lsu.exception && s1_req(w).uop.uses_ldq) &&
-  //                        !(s2_store_failed && (s1_type === t_lsu) && s1_req(w).uop.uses_stq)))
-  // for (w <- 0 until memWidth)
-  //   s2_req(w).uop.br_mask := GetNewBrMask(io.lsu.brupdate, s1_req(w).uop)
+    s1_tag_match_way = s1_type == t_replay          ?   s1_replay_way_en:
+                       s1_type == t_wb              ?   s1_wb_way_en:
+                       s1_type == t_mshr_meta_read  ?   s1_mshr_meta_read_way_en: s1_tag_match_way_1;
 
-  // val s2_tag_match_way = RegNext(s1_tag_match_way)
-  // val s2_tag_match     = s2_tag_match_way.map(_.orR)
-  // val s2_hit_state     = widthMap(i => Mux1H(s2_tag_match_way(i), wayMap((w: Int) => RegNext(meta(i).io.resp(w).coh))))
-  // val s2_has_permission = widthMap(w => s2_hit_state(w).onAccess(s2_req(w).uop.mem_cmd)._1)
-  // val s2_new_hit_state  = widthMap(w => s2_hit_state(w).onAccess(s2_req(w).uop.mem_cmd)._3)
+    s1_wb_idx_matches = s1_addr[HasL1CacheParameters::untagBits - 1:`blockOffBits] ==
+        wb_io_idx.bits && wb_io_idx.valid;
+  end
 
-  // val s2_hit = widthMap(w => (s2_tag_match(w) && s2_has_permission(w) && s2_hit_state(w) === s2_new_hit_state(w) && !mshrs.io.block_hit(w)) || s2_type.isOneOf(t_replay, t_wb))
-  // val s2_nack = Wire(Vec(memWidth, Bool()))
-  // assert(!(s2_type === t_replay && !s2_hit(0)), "Replays should always hit")
-  // assert(!(s2_type === t_wb && !s2_hit(0)), "Writeback should always see data hit")
+  BoomLSUST::BoomDCacheReqST reg_s1_req;
+  BoomLSUST::BoomDCacheReqST s2_req;
 
-  // val s2_wb_idx_matches = RegNext(s1_wb_idx_matches)
+  state s2_type;
+  state reg_s1_type;
+
+  logic reg_s2_valid;
+  logic s2_valid;
+
+  logic [HasL1CacheParameters::nWays-1:0] s2_tag_match_way;
+  logic [HasL1CacheParameters::nWays-1:0] reg_s2_tag_match_way;
+  logic s2_tag_match;
 
 
-  // // lr/sc
-  // val debug_sc_fail_addr = RegInit(0.U)
-  // val debug_sc_fail_cnt  = RegInit(0.U(8.W))
 
-  // val lrsc_count = RegInit(0.U(log2Ceil(lrscCycles).W))
-  // val lrsc_valid = lrsc_count > lrscBackoff.U
-  // val lrsc_addr  = Reg(UInt())
-  // val s2_lr = s2_req(0).uop.mem_cmd === M_XLR && (!RegNext(s1_nack(0)) || s2_type === t_replay)
-  // val s2_sc = s2_req(0).uop.mem_cmd === M_XSC && (!RegNext(s1_nack(0)) || s2_type === t_replay)
-  // val s2_lrsc_addr_match = widthMap(w => lrsc_valid && lrsc_addr === (s2_req(w).addr >> blockOffBits))
-  // val s2_sc_fail = s2_sc && !s2_lrsc_addr_match(0)
-  // when (lrsc_count > 0.U) { lrsc_count := lrsc_count - 1.U }
-  // when (s2_valid(0) && ((s2_type === t_lsu && s2_hit(0) && !s2_nack(0)) ||
-  //                    (s2_type === t_replay && s2_req(0).uop.mem_cmd =/= M_FLUSH_ALL))) {
-  //   when (s2_lr) {
-  //     lrsc_count := (lrscCycles - 1).U
-  //     lrsc_addr := s2_req(0).addr >> blockOffBits
-  //   }
-  //   when (lrsc_count > 0.U) {
-  //     lrsc_count := 0.U
-  //   }
-  // }
-  // for (w <- 0 until memWidth) {
-  //   when (s2_valid(w)                            &&
-  //     s2_type === t_lsu                          &&
-  //     !s2_hit(w)                                 &&
-  //     !(s2_has_permission(w) && s2_tag_match(w)) &&
-  //     s2_lrsc_addr_match(w)                      &&
-  //     !s2_nack(w)) {
-  //     lrsc_count := 0.U
-  //   }
-  // }
 
-  // when (s2_valid(0)) {
-  //   when (s2_req(0).addr === debug_sc_fail_addr) {
-  //     when (s2_sc_fail) {
-  //       debug_sc_fail_cnt := debug_sc_fail_cnt + 1.U
-  //     } .elsewhen (s2_sc) {
-  //       debug_sc_fail_cnt := 0.U
-  //     }
-  //   } .otherwise {
-  //     when (s2_sc_fail) {
-  //       debug_sc_fail_addr := s2_req(0).addr
-  //       debug_sc_fail_cnt  := 1.U
-  //     }
-  //   }
-  // }
-  // assert(debug_sc_fail_cnt < 100.U, "L1DCache failed too many SCs in a row")
+  logic [BundleParam::TLPermissions_width-1:0] reg_meta_io_resp[HasL1CacheParameters::nWays-1:0];
 
-  // val s2_data = Wire(Vec(memWidth, Vec(nWays, UInt(encRowBits.W))))
-  // for (i <- 0 until memWidth) {
-  //   for (w <- 0 until nWays) {
-  //     s2_data(i)(w) := data.io.resp(i)(w)
-  //   }
-  // }
+  logic [BundleParam::TLPermissions_width-1:0] s2_hit_state;
+  logic s2_has_permission;
+  logic [BundleParam::TLPermissions_width-1:0] s2_new_hit_state;
 
-  // val s2_data_muxed = widthMap(w => Mux1H(s2_tag_match_way(w), s2_data(w)))
-  // val s2_word_idx   = widthMap(w => if (rowWords == 1) 0.U else s2_req(w).addr(log2Up(rowWords*wordBytes)-1, log2Up(wordBytes)))
+  logic s2_hit;
+  logic s2_nack;
 
+  logic s2_wb_idx_matches;
+  logic reg_s1_wb_idx_matches;
+
+  always_ff @(posedge clock or posedge clock) begin
+    if (reset) begin
+      reg_s1_type <= 0;
+      reg_s1_req <= 0;
+
+      reg_s2_valid <= 0;
+      reg_s2_tag_match_way <= 0;
+
+      reg_meta_io_resp <= 0;
+
+      reg_s1_wb_idx_matches <= 0;
+    end else begin
+
+      reg_s1_req <= s1_req;
+      reg_s1_type <= s1_type;
+
+      reg_s2_valid <=   s1_valid && 
+                        !io_lsu_s1_kill &&
+                        !isKilledByBranchST(io_lsu_brupdate, s1_req.uop) &&
+                        !(io_lsu_exception && s1_req.uop.uses_ldq) &&
+                        !(s2_store_failed && (s1_type == t_lsu) && s1_req.uop.uses_stq);
+
+      reg_s2_tag_match_way <= s1_tag_match_way;
+
+      reg_meta_io_resp <= meta_io_resp;
+
+      reg_s1_wb_idx_matches <= s1_wb_idx_matches;
+    end
+  end
+
+  
+  always_comb begin
+    s2_req = reg_s1_req;
+    s2_type = reg_s1_type;
+
+    s2_req.uop.br_mask = getNewBrMaskST(io_lsu_brupdate, s1_req.uop);
+
+    s2_valid = reg_s2_valid;
+
+    s2_tag_match = |s2_tag_match_way;
+
+    s2_hit_state = 0;
+    for (int i = 0; i < HasL1CacheParameters::nWays; i++) begin
+      if (s2_tag_match_way[i]) s2_hit_state = reg_meta_io_resp[i];
+    end
+    {s2_has_permission, s2_new_hit_state} = MetaData::onAccess(s2_hit_state, s2_req.uop.mem_cmd);
+
+    s2_hit =  s2_tag_match                      &&
+              s2_has_permission                 && 
+              s2_hit_state == s2_new_hit_state  && 
+              mshr_io_block_hit;
+    s2_wb_idx_matches = reg_s1_wb_idx_matches;
+  end
+
+  // -------
+  // lr/sc
+  logic [`coreMaxAddrBits-1:0] debug_sc_fail_addr;
+  logic debug_sc_fail_cnt;
+
+  logic [$clog2(HasL1HellaCacheParameters::lrscCycles)-1:0] lrsc_count;
+  logic lrsc_valid;
+
+  logic lrsc_addr;
+  logic s2_lr;
+  logic s2_sc;
+  logic s2_lrsc_addr_match;
+  logic s2_sc_fail;
+  always_comb begin
+    lrsc_valid = lrsc_count > 3;
+    s2_lr = s2_req.uop.mem_cmd == MemoryOpConstants::M_XLR && (!reg_s1_nack || s2_type == t_replay);
+    s2_sc = s2_req.uop.mem_cmd == MemoryOpConstants::M_XSC && (!reg_s1_nack || s2_type == t_replay);
+    s2_lrsc_addr_match = (lrsc_valid && lrsc_addr == (s2_req.addr >> `blockOffBits));
+    s2_sc_fail = s2_sc && !s2_lrsc_addr_match;
+  end
+
+
+  always_ff @(posedge clock or posedge reset) begin
+    if (reset) begin
+      lrsc_count <= 0;
+    end else begin
+      if (lrsc_count > 0) lrsc_count <= lrsc_count - 1;
+
+      if (s2_valid && ((s2_type == t_lsu && s2_hit && !s2_nack) || (
+                       s2_type == t_replay && s2_req.uop.mem_cmd != MemoryOpConstants::M_FLUSH_ALL))
+          ) begin
+        if (s2_lr) begin
+          lrsc_count = HasL1HellaCacheParameters::lrscCycles - 1;
+          lrsc_addr = s2_req.addr >> `blockOffBits;
+        end
+
+        if (lrsc_count > 0) lrsc_count <= 0;
+      end
+
+      if (s2_valid                              &&
+          s2_type == t_lsu                      &&
+          !s2_hit                               &&
+          !(s2_has_permission && s2_tag_match)  &&
+          s2_lrsc_addr_match                    &&
+          !s2_nack
+      )begin
+        lrsc_count <= 0;
+      end
+    end
+  end
+
+  always_ff @(posedge clock or posedge reset) begin
+    if (reset) begin
+      debug_sc_fail_cnt <= 0;
+      debug_sc_fail_addr <= 0;
+    end else begin
+      if (s2_valid) begin
+        if (s2_req.addr == debug_sc_fail_addr) begin
+          if (s2_sc_fail) debug_sc_fail_cnt <= debug_sc_fail_cnt + 1;
+
+          else if (s2_sc) debug_sc_fail_cnt <= 0;
+        end else begin
+          if (s2_sc_fail) begin
+            debug_sc_fail_addr <= s2_req.addr;
+            debug_sc_fail_cnt <= 1;
+          end
+        end
+      end
+    end
+  end
+
+  logic [HasL1HellaCacheParameters::encRowBits-1:0] s2_data[HasL1CacheParameters::nWays];
+
+  always_ff @(posedge clock or posedge reset) begin
+    if (reset) begin
+      for (int i = 0; i < HasL1CacheParameters::nWays; i = i + 1) s2_data <= 0;
+    end else begin
+      for (int i = 0; i < HasL1CacheParameters::nWays; i = i + 1) s2_data[i] = data_io_resp[i];
+    end
+  end
+
+  logic [HasL1HellaCacheParameters::encRowBits-1:0] s2_data_muxed;
+  logic s2_word_idx;
+  always_comb begin
+
+    s2_data_muxed = 0;
+    for (int i = 0; i < HasL1CacheParameters::nWays; i = i + 1) begin
+      if (s2_tag_match_way[i]) s2_data_muxed = s2_data[i];
+    end
+
+
+    s2_word_idx = HasL1HellaCacheParameters::rowWords == 1 ? 0 : s2_req.addr[
+        $clog2(HasL1HellaCacheParameters::rowWords * HasL1HellaCacheParameters::wordBytes) - 1:
+            $clog2(wordBytes)];  //取地址3
+
+  end
   // // replacement policy
   // val replacer = cacheParams.replacement
   // val s1_replaced_way_en = UIntToOH(replacer.way)

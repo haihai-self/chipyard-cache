@@ -45,9 +45,10 @@ package HasL1HellaCacheParameters;
   parameter lgCacheBlockBytes = $clog2(cacheBlockBytes);
   parameter idxMSB = HasL1CacheParameters::untagBits - 1;
   parameter idxLSB = `blockOffBits;
-  parameter wordBits = `coreDataBits;
-  parameter wordBytes = wordBits/8;
-  parameter rowWords = HasL1CacheParameters::rowBits / wordBits;
+  parameter wordBits = `coreDataBits;  //64
+  parameter wordBytes = wordBits/8;  //8
+  parameter rowWords = HasL1CacheParameters::rowBits / wordBits; //2
+  parameter lrscCycles = 80;
 
 endpackage
 
