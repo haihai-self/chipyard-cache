@@ -49,6 +49,7 @@ package HasL1HellaCacheParameters;
   parameter wordBytes = wordBits/8;  //8
   parameter rowWords = HasL1CacheParameters::rowBits / wordBits; //2
   parameter lrscCycles = 80;
+  parameter wordOffBits = $clog2(wordBytes); //3
 
 endpackage
 

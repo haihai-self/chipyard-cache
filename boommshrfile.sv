@@ -10,7 +10,7 @@ module BoomMSHRFile (
     output logic io_block_hit,
     output logic io_secondary_miss,
     output logic io_fence_rdy,
-    output logic io_probe_rdy,
+    output logic io_prober_rdy,
 
     input ExuST::BrUpdateInfoST io_brupdate,
 

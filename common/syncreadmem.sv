@@ -1,3 +1,5 @@
+
+//读取需要一个时钟周期,第0个时钟周期来需要读取的数据,下一个时钟周期也就是第1个时钟周期,数据可用
 module SyncReadMem #(
     parameter DEEPTH = 2048,
     parameter DATA_WIDTH = 2,
@@ -36,6 +38,7 @@ module SyncReadMem #(
   generate
 
     // read channel
+    //前一周期与后一周期写读的地址相同的话,可以连续得到数据
     for (genvar i = 0; i < WMASK_WIDTH; i++) begin
       assign s0_rdata[i] = (raddr == waddr && wen && cs[i]) ? wdata[i] : mem[raddr][i];
     end
@@ -56,7 +59,7 @@ module SyncReadMem #(
 endmodule
 
 
-
+//读取数据,也是一个时钟周期的延时,第0个时钟周期来需要读取的数据,第1个时钟周期可用
 module SyncReadMemNoVec #(
     parameter DEEPTH = 2048,
     parameter DATA_WIDTH = 2,

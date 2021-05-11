@@ -69,17 +69,17 @@ endmodule
 module ICacheModule (
     input  logic                  clock,
     input  logic                  reset,
-    input  logic [`paddrBits-1:0] io_s1_paddr,
-    input  logic                  io_s1_kill,
-    input  logic                  io_s2_kill,
-    input  logic                  io_invalidate,
-    input  logic                  io_s2_prefetch,
+    input  logic [`paddrBits-1:0] io_s1_paddr,    //实地址
+    input  logic                  io_s1_kill,     //分支预测中断
+    input  logic                  io_s2_kill,     //分支预测中断
+    input  logic                  io_invalidate,  //
+    input  logic                  io_s2_prefetch, //预取指令
     output logic                  io_perf_acquire,
 
-    DecoupledIF.in io_req,  //ICacheReq
-    DecoupledIF.in io_auto_d,  //TLBundleDST
-    ValidSTIF.out   io_resp,  //ICacheResp
-    DecoupledIF.out  io_auto_a  //TLBundleAST
+    DecoupledIF.in io_req,      //ICacheReq  cpu发出的需求数据
+    DecoupledIF.in io_auto_d,   //TLBundleDST  总线来的数据
+    ValidSTIF.out   io_resp,    //ICacheResp  需要返回给cpu的指令
+    DecoupledIF.out  io_auto_a  //TLBundleAST 返回给总线权限请求  
 );
 
   localparam wordBits = `fetchBytes * 8;  //16*8
@@ -121,10 +121,12 @@ module ICacheModule (
 
 
   //wire
-  logic s0_valid;
-  logic [`paddrBits-1:0] s0_vaddr;
-  logic [nWays-1:0] s1_tag_hit;
-  logic s1_hit;
+
+  //当请求到来 设为第0个周期
+  logic s0_valid;  //当cpu请求到来时为1
+  logic [`paddrBits-1:0] s0_vaddr; //需要读取的地址
+  logic [nWays-1:0] s1_tag_hit;  //判断哪路命中,第0个周期就能完成
+  logic s1_hit; //判断是否命中
 
   logic refill_fire;  // a通道有数据到来设置为true
   logic s2_miss;
@@ -212,8 +214,7 @@ module ICacheModule (
   
 
   logic [15:0] LFSR16_out;
-  logic sadfasdf;
-  LFSR16 ls(
+  LFSR16 lfsr16_icache(
     .clock(clock), 
     .reset(reset), 
     .increment(refill_fire), 
@@ -276,6 +277,8 @@ module ICacheModule (
   end
 
 
+
+  //第1个周期判断哪路命中
   logic [tagBits-1:0] s1_tag;
   logic [idxBits-1:0] s1_idx;
   assign s1_idx = io_s1_paddr[untagBits - 1:`blockOffBits];
@@ -336,7 +339,7 @@ module ICacheModule (
 
           .ren  (data_ren[i]),
           .raddr(mem_idx0),
-          .rdata(bank0_data_out[i])
+          .rdata(bank0_data_out[i])  //第一个时钟周期数据可用
       );
 
       SyncReadMemNoVec #(
@@ -357,7 +360,7 @@ module ICacheModule (
         if (reset)begin
           s2_dout[i] <= 0;
         end else begin
-          s2_dout[i] <= {bank1_data_out[i], bank0_data_out[i]}; //打一拍
+          s2_dout[i] <= {bank1_data_out[i], bank0_data_out[i]}; //读取数据时第二个时钟周期数据可用
         end
       end
     end
@@ -396,7 +399,7 @@ module ICacheModule (
     s2_bank0_data = s2_way_mux[wordBits / 2 - 1:0];
     s2_bank1_data = s2_way_mux[wordBits - 1:wordBits / 2];
 
-    s2_data = s2_bankid ? {s2_bank0_data, s2_bank1_data} : {s2_bank1_data, s2_bank0_data};
+    s2_data = s2_bankid ? {s2_bank0_data, s2_bank1_data} : {s2_bank1_data, s2_bank0_data}; //组合逻辑,第二个时钟周期数据可用
   end
 
   always_comb begin

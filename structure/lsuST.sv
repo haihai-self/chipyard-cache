@@ -9,8 +9,8 @@ package BoomLSUST;
 
   typedef struct packed {
     Micro::MicroOpST uop;
-    logic [`coreMaxAddrBits-1:0] addr;
-    logic [`coreDataBits-1:0] data;
+    logic [`coreMaxAddrBits-1:0] addr;  //39
+    logic [`coreDataBits-1:0] data;  //64
     logic is_hella;
   } BoomDCacheReqST;
 

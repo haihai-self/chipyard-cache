@@ -18,7 +18,7 @@ package NBDcacheST;
   typedef struct packed {
     logic [HasL1CacheParameters::nWays-1 : 0] way_en;
     logic [HasL1CacheParameters::untagBits-1 : 0] addr;
-    logic [HasL1HellaCacheParameters::encRowBits-1:0] data;
-    logic [HasL1HellaCacheParameters::rowWords-1: 0] wmask;
+    logic [HasL1HellaCacheParameters::encRowBits-1:0] data;  //128
+    logic [HasL1HellaCacheParameters::rowWords-1: 0] wmask;  //2
   } L1DataWriteReqST;
 endpackage
