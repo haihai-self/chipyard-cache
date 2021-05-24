@@ -13,69 +13,62 @@ module BoomDuplicatedDataArray(
   output logic io_nack
 
 );
-  // rowWrod: 2                                                                                                              
+  // rowWords: 2                                                                                                              
   // encDataBits: 64                                                                                                        
   // nset: 64                                                                                                               
   // refillCycles: 4 
-  localparam rowWrod = 2;
+  localparam rowWords = 2;
   localparam encDataBits = 64;
   localparam nSets = HasL1CacheParameters::nSets;
   localparam nWays = HasL1CacheParameters::nWays;
   localparam refillCycles = HasL1CacheParameters::refillCycles;
+  localparam rowOffBits = 4;
 
   logic [$clog2(refillCycles * nSets)-1:0] raddr ;
   logic [$clog2(refillCycles * nSets)-1:0] waddr ;
-  logic [nWays-1:0] wen[2];
-  logic [HasL1HellaCacheParameters::encRowBits-1:0] data_out[nWays];
+  logic [encDataBits-1:0] wdata [rowWords-1:0];
+  logic [nWays-1:0] wen;
+  logic [HasL1HellaCacheParameters::encDataBits-1:0] data_out[nWays-1:0][rowWords-1:0];
   logic [HasL1HellaCacheParameters::encRowBits-1:0] rdata[nWays];
 
-  assign raddr = io_read.bits.addr >> `rowOffBits;
-  assign waddr = io_write.bits.addr >> `rowOffBits;
+  assign raddr = io_read.bits.addr >> rowOffBits;
+  assign waddr = io_write.bits.addr >> rowOffBits;
   assign io_nack = 0;
+
+  always_comb begin
+    data[0] = io_write.bits.data[encDataBits-1:0];
+    data[1] = io_write.bits.data[rowWords*encDataBits-1: encDataBits];
+  end
+
   generate
     for (genvar i = 0; i < nWays; i = i + 1)begin
 
-      wen[i][0] = io_write.bits.wmask[0] && io_write.bits.way_en[i] && io_write.valid;
-      wen[i][1] = io_write.bits.wmask[1] && io_write.bits.way_en[i] && io_write.valid;
-      SyncReadMemNoVec #(
+      assign wen[i] = io_write.bits.way_en[i] && io_write.valid;
+      SyncReadMem #(
         .DEEPTH(nSets * refillCycles),
-        .DATA_WIDTH(encDataBits)
+        .DATA_WIDTH(encDataBits),
+        .WMASK_WIDTH(rowWords)
       ) data_array0 (
         .clk(clock),
         .reset(reset),
         
-        .wen(wen[i][0]),
+        .wen(wen[i]),
         .waddr(waddr),
-        .wdata(io_write.bits.data[encDataBits-1:0]),
+        .cs(io_write.bits.wmask),
+        .wdata(wdata),
         
         .ren(io_read.bits.way_en[i] && io_read.valid),
         .raddr(raddr),
-        .rdata(data_out[i][encDataBits-1:0])
+        .rdata(data_out[i])
       );
-
-
-      SyncReadMemNoVec #(
-        .DEEPTH(nSets * refillCycles),
-        .DATA_WIDTH(encDataBits)
-      ) data_array1 (
-        .clk(clock),
-        .reset(reset),
-        
-        .wen(wen[i][1]),
-        .waddr(waddr),
-        .wdata(io_write.bits.data[encDataBits*2-1:0]),
-        
-        .ren(io_read.bits.way_en[i] && io_read.valid),
-        .raddr(raddr),
-        .rdata(data_out[i][encDataBits*2-1:0])
-      )
     end
 
     always_ff @(posedge clock or posedge reset) begin
       if (reset){
         rdata[i] <= 0;
       }else begin
-        rdata[i] <= data_out[i];
+        rdata[i][127:64] <= data_out[i][1];
+        rdata[i][63:0] <= data_out[i][0];
       end
     end
     assign io_resp[i] = rdata[i]

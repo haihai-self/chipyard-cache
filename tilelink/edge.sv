@@ -49,14 +49,14 @@ package Edge;
                                          logic [BundleParam::dataBits-1:0] data,
                                          logic corrupt = 0);
     BundleST::TLBundleCST c;
-    c.opcode = TLMessages::ReleaseData;
+    c.opcode = TLMessages::ReleaseData;  //返回release相关信息
     c.param = shrinkPermissions;
     c.size = lgSize;
     c.source = fromSource;
     c.address = toAddress;
     c.data = data;
     c.corrupt = corrupt;
-    return c;
+    return c;  //返回c通道需要的数据
 
   endfunction
 
@@ -93,14 +93,14 @@ package Edge;
                                           logic [BundleParam::dataBits-1:0] data = 128'b0,
                                           logic corrupt = 0);
     BundleST::TLBundleCST c;
-    c.opcode = TLMessages::ProbeAckData;
+    c.opcode = TLMessages::ProbeAckData;  //返回prober相关
     c.param = reportPermissions;
     c.size = lgSize;
     c.source = fromSource;
     c.address = toAddress;
     c.data = data;
     c.corrupt = corrupt;
-    return c;
+    return c;  //返回C通道需要的数据样式
   endfunction
 
   function BundleST::TLBundleCST ProbeAck_data_ST(BundleST::TLBundleBST b,

@@ -21,4 +21,10 @@ package BoomLSUST;
     logic [`coreDataBits-1:0] data;
     logic is_hella;
   } BoomDCacheReqValidST;
+
+  typedef struct packed {
+    logic valid;
+    BoomDCacheRespST bits;
+  } ValidBoomDacaheRespST;
+
 endpackage

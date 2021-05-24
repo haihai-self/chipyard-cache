@@ -14,23 +14,23 @@ module L1MetadataArray (
     io_read_fire = io_read.valid && io_read.ready;
     io_write_fire = io_write.valid && io_write.ready;
   end
-  logic [$clog2(HasL1CacheParameters::nSets+1)-1:0] rst_cnt;  //多申请一位
-  logic rst;  //当计数器小于nways为1
+  logic [$clog2(HasL1CacheParameters::nSets+1)-1:0] rst_cnt;  //多申请一位,只有在初始化的使用起作用
+  logic rst;  //只有在初始化的时候起作用
   assign rst = rst_cnt < HasL1CacheParameters::nWays;
 
   always_ff @(posedge clock or posedge reset) begin
     if (reset) begin
       rst_cnt <= 0;
     end else if (rst) begin
-      rst_cnt <= rst_cnt + 1;
+      rst_cnt <= rst_cnt + 1;  //只有前64个周期将会计数
     end
   end
   logic [HasL1CacheParameters::idxBits-1:0] waddr;
   logic [BundleParam::TLPermissions_width-1:0] wdata;
   logic [HasL1CacheParameters::nWays-1:0] wmask;
   always_comb begin
-    waddr = rst ? rst_cnt : io_write.bits.idx;
-    wdata = rst ? 0 : io_write.bits.data;
+    waddr = rst ? rst_cnt : io_write.bits.idx; //前64个周期顺序写入
+    wdata = rst ? 8'hff : io_write.bits.data; //初始化的时候全写
     wmask = rst ? $signed(-8'sh1) : $signed(io_write.bits.way_en);
   end
 

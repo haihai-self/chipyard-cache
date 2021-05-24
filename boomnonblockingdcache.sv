@@ -212,8 +212,8 @@ module DcacheModule (
     input  logic clock,
     input  logic reset,
     input  logic io_lsu_s1_kill,
-    input  logic io_lsu_force_order,
-    output logic io_lsu_ordered,
+    input  logic io_lsu_force_order,  //ifance指令顺序一致性
+    output logic io_lsu_ordered,  //
 
     ExuST::BrUpdateInfoST io_lsu_brupdate,  //BrUpdateInfoST
 
@@ -464,9 +464,6 @@ module DcacheModule (
 
 
   always_comb begin
-    metaReadArb_io_in = 0;
-    metaReadArb_io_in_valid = 0;
-
     meta_io_write.valid = metaWriteArb_io_out_fire;
     meta_io_write.bits = metaWriteArb_io_out;
     meta_io_read.valid = metaWriteArb_io_out_valid;
@@ -581,7 +578,7 @@ module DcacheModule (
 
     // Data read for new requests
     dataReadArb_io_in[2].valid = io_lsu_req.valid;
-    dataReadArb_io_in[2].req.addr = io_lsu_req.bits.addr >> `blockOffBits;
+    dataReadArb_io_in[2].req.addr = io_lsu_req.bits.addr;
     dataReadArb_io_in[2].req.way_en = 8'hff;
   end
 
@@ -605,7 +602,7 @@ module DcacheModule (
     metaReadArb_io_in[0].tag = 0;
     // Data read for MSHR replays
     dataReadArb_io_in_valid[0] = mshr_io_replay.valid;
-    dataReadArb_io_in[0].req.addr = mshr_io_replay.bits.addr >> `blockOffBits;
+    dataReadArb_io_in[0].req.addr = mshr_io_replay.bits.addr;
     dataReadArb_io_in[0].req.way_en = mshr_io_replay.bits.way_en;
     dataReadArb_io_in[0].req.valid = 0;
   end
@@ -700,39 +697,23 @@ module DcacheModule (
 
   end
 
-  logic reg_s0_valid_1;
-  logic reg_s0_valid_0;
-  BoomLSUST::BoomDCacheReqST reg_io_lsu_req_bits;
-  BoomLSUST::BoomDCacheReqST reg_s0_req;
+  logic s0_valid_0;
+  logic s0_valid_1;
 
   logic s0_valid;
   BoomLSUST::BoomDCacheReqST s0_req;
   state s0_type;
-  state reg_s0_type;
 
-  always_ff @(posedge clock or posedge reset) begin
-    if (reset) begin
-      reg_s0_valid_0 <= 0;
-      reg_s0_valid_1 <= 0;
-    end else begin
-      reg_s0_valid_1 <= io_lsu_req.valid;
-      reg_s0_valid_0
-          <= (mshr_io_replay_fire || wb_fire || prober_fire || mshr_io_meta_read_fire) ? 1 : 0;
-
-      reg_io_lsu_req_bits <= io_lsu_req.bits;
-
-      reg_s0_req <= s0_req;
-      reg_s0_type <= s0_type;
-    end
-  end
-
+  logic s0_send_resp_or_nack;
 
 
   always_comb begin
+    s0_valid_1 <= io_lsu_req.valid;
+    s0_valid_0 <= (mshr_io_replay_fire || wb_fire || prober_fire || mshr_io_meta_read_fire) ? 1 : 0;
 
-    s0_valid <= io_lsu_req_fire ? reg_s0_valid_1 : reg_s0_valid_0;
+    s0_valid <= io_lsu_req_fire ? s0_valid_1 : s0_valid_0;
 
-    s0_req <= io_lsu_req_fire         ?   reg_io_lsu_req_bits :
+    s0_req <= io_lsu_req_fire         ?   io_lsu_req.bits     :
               wb_fire                 ?   wb_req              :
               prober_fire             ?   prober_req          :
               prefetch_fire           ?   prefetch_req        :
@@ -744,77 +725,74 @@ module DcacheModule (
                   prober_fire               ?   t_probe:
                   prefetch_fire             ?   t_prefetch:
                   mshr_io_meta_read_fire    ?   t_mshr_meta_read: t_replay; 
+    
+    // Does this request need to send a response or nack
+    s0_send_resp_or_nack <=
+        mshr_io_replay_fire && isRead(mshr_io_replay.bits.uop.mem_cmd) ? 1 : 0;
+      
   end
 
 
-  // -------
-  // Does this request need to send a response or nack
-  logic s0_send_resp_or_nack;
-  logic reg_s0_send_resp_or_nack;
+
+
+  //-----------------
+  //s1_stage
   BoomLSUST::BoomDCacheReqST s1_req;
 
   logic s2_store_failed;
   logic s1_valid;
-  logic reg_s1_valid;
   logic [`coreMaxAddrBits] s1_addr;
   logic s1_nack;
-  logic reg_s1_nack;
   logic s1_send_resp_or_nack;
-  logic reg_s1_send_resp_or_nack;
   state s1_type;
 
+  logic reg_s1_nack;
+
   logic [HasL1CacheParameters::nWays-1:0] s1_mshr_meta_read_way_en;
-  logic [HasL1CacheParameters::nWays-1:0] reg_s1_mshr_meta_read_way_en;
 
   logic [HasL1CacheParameters::nWays-1:0] s1_replay_way_en;
-  logic [HasL1CacheParameters::nWays-1:0] reg_s1_replay_way_en;
 
   logic [HasL1CacheParameters::nWays-1:0] s1_wb_way_en;
-  logic [HasL1CacheParameters::nWays-1:0] reg_s1_wb_way_en;
+
+  // logic [HasL1CacheParameters::nWays-1:0] reg_s1_mshr_meta_read_way_en;
+  // logic [HasL1CacheParameters::nWays-1:0] reg_s1_replay_way_en;
+  // logic [HasL1CacheParameters::nWays-1:0] reg_s1_wb_way_en;
 
   always_ff @(posedge clock or posedge reset) begin
     if (reset) begin
-      reg_s1_valid <= 0;
       reg_s1_nack <= 0;
-      reg_s1_send_resp_or_nack <= 0;
+      s1_valid <= 0;
+      s1_send_resp_or_nack <= 0;
     end else begin
+      s1_req <= s0_req;
+      s1_req.br_mask = getNewBrMaskST(io_lsu_brupdate, s0_req.uop);
+
       reg_s1_nack = s1_nack;
-      reg_s1_valid <= s0_valid                                            &&
+      s1_valid <=     s0_valid                                            &&
                       !isKilledByBranchST(io_lsu_brupdate, s0_req.uop)    &&
                       !(io_lsu_exception && io_lsu_req.uop.uses_ldq)      &&
                       !(s2_store_failed && io_lsu_req_fire && s0_req.uop.uses_stq);
       
-      reg_s0_send_resp_or_nack <=
-          mshr_io_replay_fire && isRead(mshr_io_replay.bits.uop.mem_cmd) ? 1 : 0;
-      
-      reg_s1_send_resp_or_nack <= s1_send_resp_or_nack;
 
-      reg_s1_mshr_meta_read_way_en <= mshr_io_meta_read.bits.way_en;
-      reg_s1_replay_way_en <=
-          mshr_io_replay.bits.way_en;  // For replays, the metadata isn't written yet
-      reg_s1_wb_way_en <= wb_io_data_req.bits.way_en;
+      s1_send_resp_or_nack <= s0_send_resp_or_nack;
+      s1_type <= s0_type;
+
+      s1_mshr_meta_read_way_en <= mshr_io_meta_read.bits.way_en;
+      // For replays, the metadata isn't written yet
+      s1_replay_way_en <= mshr_io_replay.bits.way_en;
+      s1_wb_way_en <= wb_io_data_req.bits.way_en;
     end
   end
 
 
   always_comb begin
-    s0_send_resp_or_nack = io_lsu_req_fire ? s0_valid : reg_s0_send_resp_or_nack;
 
-    s1_valid = reg_s1_valid;
-    s1_req = reg_s0_req;
-    s1_req.br_mask = getNewBrMaskST(io_lsu_brupdate, s0_req.uop);
 
     s1_addr = s1_req.addr;
     s1_nack = (s1_addr[HasL1HellaCacheParameters::idxMSB:HasL1HellaCacheParameters::idxLSB] ==
                prober_io_meta_write.bits.idx) && !prober_io_req.ready;
-    s1_send_resp_or_nack = reg_s0_send_resp_or_nack;
-    s1_type = reg_s0_type;
-    s1_mshr_meta_read_way_en = reg_s1_mshr_meta_read_way_en;
-    s1_replay_way_en = reg_s1_replay_way_en;
-    s1_wb_way_en = reg_s1_replay_way_en;
   end
 
-  // -------
   // tag check
   logic [HasL1CacheParameters::nWays-1:0] s1_tag_eq_way;
   logic [HasL1CacheParameters::nWays-1:0] s1_tag_match_way;
@@ -824,8 +802,10 @@ module DcacheModule (
   always_comb begin
     s1_tag_eq_way = 0;
     for (int i = 0; i < HasL1CacheParameters::nWays; i++) begin
-      if (meta_io_resp.tag == (s1_addr >> HasL1CacheParameters::untagBits)) s1_tag_eq_way[i] = 1;
-      else s1_tag_eq_way[i] = 0;
+      if (meta_io_resp.tag == (s1_addr >> HasL1CacheParameters::untagBits)) 
+        s1_tag_eq_way[i] = 1;
+      else 
+        s1_tag_eq_way[i] = 0;
 
       s1_tag_match_way_1[i] = s1_tag_eq_way[i] && (meta_io_resp[i].coh > 0);
     end
@@ -834,10 +814,18 @@ module DcacheModule (
                        s1_type == t_wb              ?   s1_wb_way_en:
                        s1_type == t_mshr_meta_read  ?   s1_mshr_meta_read_way_en: s1_tag_match_way_1;
 
-    s1_wb_idx_matches = s1_addr[HasL1CacheParameters::untagBits - 1:`blockOffBits] ==
-        wb_io_idx.bits && wb_io_idx.valid;
+    s1_wb_idx_matches = (s1_addr[HasL1CacheParameters::untagBits - 1:`blockOffBits] ==
+        wb_io_idx.bits) && wb_io_idx.valid;
   end
 
+
+
+
+
+
+
+  //--------------
+  // s2_state
   BoomLSUST::BoomDCacheReqST s2_req;
 
   state s2_type;
@@ -845,12 +833,7 @@ module DcacheModule (
   logic s2_valid;
 
   logic [HasL1CacheParameters::nWays-1:0] s2_tag_match_way;
-  logic [HasL1CacheParameters::nWays-1:0] reg_s2_tag_match_way;
   logic s2_tag_match;
-
-
-
-
   logic [BundleParam::TLPermissions_width-1:0] reg_meta_io_resp[HasL1CacheParameters::nWays-1:0];
 
   logic [BundleParam::TLPermissions_width-1:0] s2_hit_state;
@@ -861,19 +844,17 @@ module DcacheModule (
   logic s2_nack;
 
   logic s2_wb_idx_matches;
-  logic reg_s1_wb_idx_matches;
 
   always_ff @(posedge clock or posedge clock) begin
     if (reset) begin
       s2_req <= 0;
       s2_type <= 0;
-
       s2_valid <= 0;
-      reg_s2_tag_match_way <= 0;
+
+      s2_tag_match_way <= 0;
 
       reg_meta_io_resp <= 0;
 
-      reg_s1_wb_idx_matches <= 0;
     end else begin
 
       s2_req <= s1_req;
@@ -887,11 +868,11 @@ module DcacheModule (
                   !(io_lsu_exception && s1_req.uop.uses_ldq) &&
                   !(s2_store_failed && (s1_type == t_lsu) && s1_req.uop.uses_stq);
 
-      reg_s2_tag_match_way <= s1_tag_match_way;
+      s2_tag_match_way <= s1_tag_match_way;
 
       reg_meta_io_resp <= meta_io_resp;
 
-      reg_s1_wb_idx_matches <= s1_wb_idx_matches;
+      s2_wb_idx_matches <= s1_wb_idx_matches;
     end
   end
 
@@ -912,18 +893,16 @@ module DcacheModule (
               s2_has_permission                 && 
               s2_hit_state == s2_new_hit_state  && 
               mshr_io_block_hit;
-    s2_wb_idx_matches = reg_s1_wb_idx_matches;
   end
 
-  // -------
   // lr/sc
   logic [`coreMaxAddrBits-1:0] debug_sc_fail_addr;
-  logic debug_sc_fail_cnt;
+  logic [7:0] debug_sc_fail_cnt;
 
   logic [$clog2(HasL1HellaCacheParameters::lrscCycles)-1:0] lrsc_count;
   logic lrsc_valid;
 
-  logic lrsc_addr;
+  logic [`coreMaxAddrBits-1:0] lrsc_addr;
   logic s2_lr;
   logic s2_sc;
   logic s2_lrsc_addr_match;
@@ -976,7 +955,8 @@ module DcacheModule (
           if (s2_sc_fail) debug_sc_fail_cnt <= debug_sc_fail_cnt + 1;
 
           else if (s2_sc) debug_sc_fail_cnt <= 0;
-        end else begin
+        end 
+        else begin
           if (s2_sc_fail) begin
             debug_sc_fail_addr <= s2_req.addr;
             debug_sc_fail_cnt <= 1;
@@ -1012,7 +992,6 @@ module DcacheModule (
 
   end
 
-  // -------
   // replacement policy
   logic [15:0] LFSR16_out;
   LFSR16 lfsr16_dcache (
@@ -1044,7 +1023,7 @@ module DcacheModule (
 
   always_ff @(posedge clock or posedge reset) begin
     if (reset) begin
-      reg_s1_replay_way_en <= 0;
+      reg_s1_replaced_way_en <= 0;
     end else begin
       s2_nack_hit <= s1_nack;
       reg_s1_replaced_way_en <= s1_replaced_way_en;
@@ -1073,9 +1052,9 @@ module DcacheModule (
     s2_nack_wb = s2_valid && !s2_hit && s2_wb_idx_matches;
     s2_nack = (s2_nack_miss || s2_nack_hit || s2_nack_victim || s2_nack_data || s2_nack_wb) &&
         s2_type != t_replay;
-    s2_send_resp = reg_s1_send_resp_or_nack && !s2_nack && (
+    s2_send_resp = s1_send_resp_or_nack && !s2_nack && (
         s2_hit || mshr_io_req_fire && isWrite(s2_req.uop.mem_cmd) && isRead(s2_req.uop.mem_cmd));
-    s2_send_nack = reg_s1_send_resp_or_nack && s2_nack;
+    s2_send_nack = s1_send_resp_or_nack && s2_nack;
     // hits always send a response
     // If MSHR is not available, LSU has to replay this request later
     // If MSHR is available and this is only a store(not a amo), we don't need to wait for resp later
@@ -1129,7 +1108,6 @@ module DcacheModule (
 
   // -----
   // probes and releases
-
 
   always_comb begin
     prober_io_req.valid = io_auto_b.valid && !lrsc_valid;
@@ -1213,23 +1191,24 @@ module DcacheModule (
 
   always_comb begin
     // 0 goes to prober, 1 goes to MSHR evictions
-    wbArb_io_in[0] = prober_io_wb_req.bits;
+    wbArb_io_in[0] = prober_io_wb_req.bits; //prober输如
     wbArb_io_in_valid[0] = prober_io_wb_req.valid;
     prober_io_wb_req.ready = wbArb_io_in_ready[0];
 
-    wbArb_io_in[1] = mshr_io_wb_req.bits;
+    wbArb_io_in[1] = mshr_io_wb_req.bits; //mshr输入
     wbArb_io_in_valid[1] = mshr_io_wb_req.valid;
     mshr_io_wb_req.ready = wbArb_io_in_ready[1];
 
-    wb_io_req.bits = wbArb_io_out;
+    wb_io_req.bits = wbArb_io_out; //输入wb模块
     wb_io_req.valid = wbArb_io_out_valid;
     wbArb_io_out_ready = wb_io_req.ready;
 
     wb_io_data_resp = s2_data_muxed;
     mshr_io_wb_resp = wb_io_resp;
-    wb_io_mem_grant = io_auto_d_fire && io_auto_d.bits.source == DCacheParams::nMSHRs;
+    wb_io_mem_grant = io_auto_d_fire && io_auto_d.bits.source == DCacheParams::nMSHRs;  //grant响应
 
   end
+
   logic [1:0] lsu_release_arb_io_in_valid;
   logic [1:0] lsu_release_arb_io_in_ready;
   BundleST::TLBundleCST lsu_release_arb_io_in[1];
@@ -1240,6 +1219,7 @@ module DcacheModule (
 
   logic lsu_release_arb_io_chosen;
   logic lsu_release_arb_io_out_fire;
+  //lsu_release仲裁器
   Arbiter #(
       .n(2),
       .T(BundleST::TLBundleCST)
@@ -1258,14 +1238,17 @@ module DcacheModule (
 
 
   always_comb begin
+    //仲裁器输出io_lsu
     io_lsu_release.bits = lsu_release_arb_io_out;
     io_lsu_release.valid = lsu_release_arb_io_out_valid;
     lsu_release_arb_io_out_ready = io_lsu_release.ready;
 
+    //仲裁器第一个输入为wb的lsu_release
     lsu_release_arb_io_in[0] = wb_io_lsu_release.bits;
     lsu_release_arb_io_in_valid[0] = wb_io_lsu_release.valid;
     wb_io_lsu_release.ready = lsu_release_arb_io_in_ready[0];
 
+    //仲裁器的第二个输入为prober的lsu_release
     lsu_release_arb_io_in[1] = prober_io_lsu_release.bits;
     lsu_release_arb_io_in_valid[1] = prober_io_lsu_release.valid;
     prober_io_lsu_release.ready = lsu_release_arb_io_in_ready[1];
@@ -1292,7 +1275,7 @@ module DcacheModule (
   logic [63:0] s2_data_word;
 
   // Mux between cache responses and uncache responses
-  ValidSTIF #(BoomLSUST::BoomDCacheReqST) cache_resp();
+  BoomLSUST::ValidBoomDacaheRespST cache_resp;
   always_comb begin
     s2_data_word_prebypass =  s2_data_muxed >> {s2_word_idx, 6'h0};
     
@@ -1302,8 +1285,8 @@ module DcacheModule (
     // cache_resp.bits.data = loadgen.data | s2_sc_fail; //need to comp
   end
 
-  ValidSTIF #(BoomLSUST::BoomDCacheReqST) uncache_resp();
-  ValidSTIF #(BoomLSUST::BoomDCacheReqST) resp();
+  BoomLSUST::ValidBoomDacaheRespST uncache_resp;
+  BoomLSUST::ValidBoomDacaheRespST resp;
 
 
   logic uncache_responding;
