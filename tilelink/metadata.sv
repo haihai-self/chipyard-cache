@@ -6,14 +6,17 @@ package MetaData;
   localparam False = 1'h0;
   localparam True = 1'h1;
 
-  localparam wr = {True, True};
-  localparam wi = {False, True};
-  localparam rd = {False, False};
+  localparam wr = {True, True}; // Op actually writes
+  localparam wi = {False, True}; // Future op will write
+  localparam rd = {False, False}; // Op only reads
 
   function logic [1:0] categorize(logic [M_SZ-1:0] cmd);
     return {isWrite(cmd), isWriteIntent(cmd)};
   endfunction
 
+  /** Determine what state to go to after miss based on Grant param
+    * For now, doesn't depend on state (which may have been Probed).
+    */
   function logic [TLPermissions_width-1:0] growFinisher(logic [M_SZ-1:0] cmd,
                                                           logic [1:0] param);
     logic [3:0] c;
@@ -26,10 +29,12 @@ package MetaData;
     return result;
   endfunction
 
+ /** Metadata change on a returned Grant */
   function logic [TLPermissions_width-1:0] onGrant(logic [M_SZ-1:0] cmd, logic [1:0] param);
     return growFinisher(cmd, param);
   endfunction
 
+  /** Determine whether this cmd misses, and the new state (on hit) or param to be sent (on miss) */
   function logic [2:0] growStarter(logic [TLPermissions_width-1:0] state, logic [M_SZ-1:0] cmd);
     logic [3:0] param;
     logic [2:0] result;
@@ -49,14 +54,15 @@ package MetaData;
     return result;
   endfunction
 
-
+  /** Does this cache have permissions on this block sufficient to perform op,
+    * and what to do next (Acquire message param or updated metadata). */
   function logic [2:0] onAccess(logic [TLPermissions_width-1:0] state, logic [M_SZ-1:0] cmd);
     return growStarter(state, cmd);
   endfunction
 
 
 
-
+  /** Does a secondary miss on the block require another Acquire message */
   function TileLinkST::onSecondaryAccessST onSecondaryAccess(logic [TLPermissions_width-1:0] state,
                                                             logic [M_SZ-1 : 0] first_cmd,
                                                             logic [M_SZ-1:0] second_cmd);
@@ -73,6 +79,8 @@ package MetaData;
     return result;
   endfunction
 
+
+ /** Determine what state to go to based on Probe param */
   function logic [5:0] shrinkHelper(logic [TLPermissions_width-1:0] state,
                                     logic [BundleParam::bdwidth-1:0] param);
     logic [3:0] params;
@@ -95,6 +103,7 @@ package MetaData;
     return result;
   endfunction
 
+  /** Translate cache control cmds into Probe param */
   function logic [bdwidth-1:0] cmdToPermCap(logic [M_SZ-1:0] cmd);
     logic [bdwidth-1:0] result;
     result = cmd == M_FLUSH ? toN : cmd == M_PRODUCE ? toB : cmd == M_CLEAN ? toT : toN;

@@ -61,7 +61,6 @@ module BoomDuplicatedDataArray(
         .raddr(raddr),
         .rdata(data_out[i])
       );
-    end
 
     always_ff @(posedge clock or posedge reset) begin
       if (reset){
@@ -73,7 +72,6 @@ module BoomDuplicatedDataArray(
     end
     assign io_resp[i] = rdata[i]
   endgenerate
-  assign 
 endmodule
 
 // module BoomDuplicatedDataArray( // @[chipyard.TestHarness.LargeBoomConfig.fir 171531:2]

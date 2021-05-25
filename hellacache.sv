@@ -1,7 +1,7 @@
 module L1MetadataArray (
     input logic clock,
     input logic reset,
-    output logic [BundleParam::TLPermissions_width-1:0] io_resp[HasL1CacheParameters::nWays],
+    output HellaCacheST::L1MetadataST io_resp[HasL1CacheParameters::nWays],
 
     DecoupledIF.in io_read,  //L1MetaReadReq
     DecoupledIF.in io_write  //L1MetaWriteReq
@@ -28,6 +28,9 @@ module L1MetadataArray (
   logic [HasL1CacheParameters::idxBits-1:0] waddr;
   logic [BundleParam::TLPermissions_width-1:0] wdata;
   logic [HasL1CacheParameters::nWays-1:0] wmask;
+  logic [BundleParam::TLPermissions_width] output_coh [HasL1CacheParameters::nWays-1:0];
+  logic [19:0] output_tag [HasL1CacheParameters::nWays-1:0];
+
   always_comb begin
     waddr = rst ? rst_cnt : io_write.bits.idx; //前64个周期顺序写入
     wdata = rst ? 8'hff : io_write.bits.data; //初始化的时候全写
@@ -46,6 +49,24 @@ module L1MetadataArray (
       .DEEPTH(HasL1CacheParameters::nSets),
       .DATA_WIDTH(BundleParam::TLPermissions_width),
       .WMASK_WIDTH(HasL1CacheParameters::nWays)
+  ) coh_array (
+      .clk  (clock),
+      .reset(reset),
+
+      .wen  (wen),
+      .waddr(waddr),
+      .cs   (wmask),
+      .wdata(wdata),
+
+      .ren  (io_read_fire),
+      .raddr(io_read.bits.idx),
+      .rdata(output_coh)
+  );
+
+  SyncReadMem #(
+      .DEEPTH(HasL1CacheParameters::nSets),
+      .DATA_WIDTH(20),
+      .WMASK_WIDTH(HasL1CacheParameters::nWays)
   ) tag_array (
       .clk  (clock),
       .reset(reset),
@@ -57,8 +78,17 @@ module L1MetadataArray (
 
       .ren  (io_read_fire),
       .raddr(io_read.bits.idx),
-      .rdata(io_resp)
+      .rdata(output_tag)
   );
+
+  generate
+    for (genvar i=0; i<8; i = i+1)begin
+      always_comb begin
+        io_resp[i].coh = output_coh[i];
+        io_resp[i].tag = output_tag[i];
+      end
+    end
+  endgenerate
 endmodule
 
 // module L1MetadataArray( // @[chipyard.TestHarness.LargeBoomConfig.fir 171257:2]
